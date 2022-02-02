@@ -15,10 +15,10 @@ set(CMAKE_CXX_STANDARD 17)
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-add_executable(${NAME} src/main.cpp src/battery.cpp)
+add_executable(${NAME} src/main.cpp src/battery.cpp src/utils.cpp src/utils.h)
 
 # Include pimoroni libraries
-include(libraries/pico_display/pico_display)
+include(libraries/pico_display_2/pico_display_2)
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(${NAME}
@@ -26,7 +26,7 @@ target_link_libraries(${NAME}
         hardware_i2c
         hardware_spi
         hardware_timer
-        pico_display
+        pico_display_2
         )
 
 pico_enable_stdio_usb(pico_clock 1)
