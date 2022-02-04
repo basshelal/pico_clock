@@ -1,32 +1,11 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
-#include "utils.h"
 #include "pico_display_2.hpp"
 
+#include "constants.h"
+#include "rtc.hpp"
+
 using namespace pimoroni;
-
-#define ON_LIGHT_PIN PICO_DEFAULT_LED_PIN
-
-// RTC
-#define RTC_MISO_PIN 12
-#define RTC_MOSI_PIN 11
-#define RTC_SCK_PIN 14
-#define RTC_CS_PIN 13
-#define RTC_SPI spi1
-
-// Screen
-#define SCREEN_LCD_TF 21
-#define SCREEN_BACKLIGHT 20
-#define SCREEN_LCD_MOSI 19
-#define SCREEN_LCD_SCLK 18
-#define SCREEN_LCD_CS 17
-#define SCREEN_LCD_DC 16
-
-#define A_BUTTON_PIN 0
-#define B_BUTTON_PIN 1
-#define X_BUTTON_PIN 2
-#define Y_BUTTON_PIN 3
-#define SCREEN_LED_PIN 4
 
 // Global state variables
 static uint16_t buffer[PicoDisplay2::WIDTH * PicoDisplay2::HEIGHT];
@@ -37,6 +16,8 @@ static struct {
     bool X;
     bool Y;
 } screen_buttons;
+
+static DS1302RTC rtc = DS1302RTC();
 
 // On light pin, useful to check if we are on
 static void on_light() {
@@ -63,10 +44,8 @@ static void initialize_screen_buttons() {
     gpio_pull_up(Y_BUTTON_PIN);
 }
 
-uint baud;
-
 static void initialize_rtc() {
-    baud = spi_init(RTC_SPI, 250);
+    rtc.init();
 }
 
 static void read_buttons() {
@@ -91,11 +70,14 @@ static void setup() {
 static void loop() {
     read_buttons();
     printf("A: %i, B: %i, X: %i, Y: %i, baud: %i\n",
-           screen_buttons.A, screen_buttons.B, screen_buttons.X, screen_buttons.Y, baud);
-    sleep_ms(250);
+           screen_buttons.A, screen_buttons.B, screen_buttons.X, screen_buttons.Y, rtc.get_baud_rate());
+    rtc.read_data();
 }
 
 int main() {
     setup();
-    while (true) loop();
+    while (true) {
+        loop();
+        sleep_ms(1000);
+    }
 }

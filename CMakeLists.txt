@@ -15,7 +15,13 @@ set(CMAKE_CXX_STANDARD 17)
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-add_executable(${NAME} src/main.cpp src/battery.cpp src/utils.cpp src/utils.h)
+add_executable(${NAME}
+        src/main.cpp
+        src/constants.h
+        src/rtc.cpp
+        src/rtc.hpp
+        src/battery.cpp
+        )
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)
