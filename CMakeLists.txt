@@ -21,7 +21,7 @@ add_executable(${NAME}
         src/rtc.cpp
         src/rtc.hpp
         src/battery.cpp
-        )
+        src/utils.hpp src/utils.cpp)
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)
