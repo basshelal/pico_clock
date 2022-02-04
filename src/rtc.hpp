@@ -7,7 +7,11 @@ private:
 public:
     void init();
 
+    bool is_halted();
+
     uint get_baud_rate();
+
+    uint8_t get_seconds();
 
     void read_data();
 };
