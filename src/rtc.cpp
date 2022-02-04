@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "rtc.hpp"
-#include "constants.h"
+#include "constants.hpp"
 #include "utils.hpp"
 
 #define REG_SECONDS 0
@@ -41,7 +41,7 @@ static uint8_t read_register(uint8_t reg) {
     disable();
 
     uint8_t result = reverse_bits(readValue);
-    log("rtc read register %u ->\t0x%x 0b%s\n",
+    log("rtc read register %u ->\t0x%02x 0b%s\n",
         reg, result, byte_to_binary(result));
 
     return result;

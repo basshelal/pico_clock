@@ -1,7 +1,10 @@
-#ifndef PICO_CLOCK_CONSTANTS_H
-#define PICO_CLOCK_CONSTANTS_H
+#ifndef PICO_CLOCK_CONSTANTS_HPP
+#define PICO_CLOCK_CONSTANTS_HPP
 
 #include "hardware/spi.h"
+
+// set to 0 for release, used only for printing information when in debug mode
+#define DEBUG 1
 
 #define ON_LIGHT_PIN PICO_DEFAULT_LED_PIN
 
@@ -29,4 +32,4 @@
 #define Y_BUTTON_PIN 3
 #define SCREEN_LED_PIN 4
 
-#endif //PICO_CLOCK_CONSTANTS_H
+#endif //PICO_CLOCK_CONSTANTS_HPP

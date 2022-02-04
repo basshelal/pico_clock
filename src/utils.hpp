@@ -1,13 +1,12 @@
 #ifndef PICO_CLOCK_UTILS_HPP
 #define PICO_CLOCK_UTILS_HPP
 
+#include "constants.hpp"
 #include "pico/stdlib.h"
 #include <string.h>
 
-#define DEBUG 1
-
 #if defined(DEBUG) && DEBUG > 0
-#define log(fmt, args...) printf(fmt, ##args);
+#define log(fmt, args...) printf(fmt, ##args)
 #else
 #define log(fmt, args...) /* Don't do anything in release builds */
 #endif

@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include "pico_display_2.hpp"
 
-#include "constants.h"
+#include "constants.hpp"
+#include "utils.hpp"
 #include "rtc.hpp"
 
 using namespace pimoroni;
@@ -69,9 +70,9 @@ static void setup() {
 
 static void loop() {
     read_buttons();
-    printf("A: %i, B: %i, X: %i, Y: %i, baud: %i\n",
-           screen_buttons.A, screen_buttons.B, screen_buttons.X, screen_buttons.Y, rtc.get_baud_rate());
-    rtc.read_data();
+    log("%02i:%02i:%02i %02i %02i %02i %02i\n",
+        rtc.get_hours(), rtc.get_minutes(), rtc.get_seconds(),
+        rtc.get_weekday(), rtc.get_date(), rtc.get_month(), rtc.get_year());
 }
 
 int main() {
