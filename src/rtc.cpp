@@ -23,12 +23,11 @@ static void disable() {
     gpio_put(RTC_CS_PIN, 0);
 }
 
-static uint8_t read_register(uint8_t reg) {
+uint8_t DS1302RTC::read_register(uint8_t reg) {
     // The DS1302 is least-significant-bit first which the pico doesn't support, so we have to reverse the bits
     // between spi calls to both read and write
 
     uint8_t cmdByte = 0x81; // 10000001 first bit is mandatory for communication, last bit signifies read
-    // TODO: 04-Feb-2022 @basshelal: Proper register bits location accommodating first and last bits
     cmdByte |= (reg << 1);
 
     cmdByte = reverse_bits(cmdByte);
@@ -47,7 +46,7 @@ static uint8_t read_register(uint8_t reg) {
     return result;
 }
 
-static void write_register(uint8_t reg, uint8_t value) {
+void DS1302RTC::write_register(uint8_t reg, uint8_t value) {
     uint8_t cmdByte = 0x80; // 10000000 first bit is mandatory for communication, last bit signifies read 0 means write
     cmdByte |= (reg << 1);
 
@@ -75,41 +74,22 @@ void DS1302RTC::init() {
     spi_set_format(RTC_SPI, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 }
 
-bool DS1302RTC::is_halted() {
+bool DS1302RTC::is_running() {
     const uint8_t rawSeconds = read_register(REG_SECONDS);
     // first bit is reserved for Clock Halt, 0 if running, 1 if halted
-    bool isHalted = (rawSeconds >> 7) & 0x01;
-    // get the top 1 bit by shifting by 7 places and then ANDing with 0000_0001 (in hex 0x01)
-    // which means keep the last 1 bit (the ones with 1) and ignore (ie clear) the ones with 0s
-    // example:        11011000
-    // >> 7 :          10110001
-    // AND 00000001 :  00000001
-    // isHalted :        1 ie true
-
-    return isHalted;
+    bool isHalted = get_bits(rawSeconds, 0, 0);
+    return !isHalted;
 }
 
 bool DS1302RTC::is_writable() {
     const uint8_t rawWriteProtect = read_register(REG_WRITE_PROTECT);
     // first bit is reserved for Write Protect, 0 if writable, 1 if write protected
-    bool isProtected = (rawWriteProtect >> 7) & 0x01;
+    bool isProtected = get_bits(rawWriteProtect, 0, 0);
     return !isProtected;
 }
 
 uint DS1302RTC::get_baud_rate() {
     return spi_get_baudrate(RTC_SPI);
-}
-
-void DS1302RTC::read_data() {
-    printf("clock on? %s\n", !is_halted() ? "true" : "false");
-    printf("is writable? %s\n", is_writable() ? "true" : "false");
-    printf("seconds: %i\n", get_seconds());
-    printf("minutes: %i\n", get_minutes());
-    printf("hours: %i\n", get_hours());
-    printf("date: %i\n", get_date());
-    printf("month: %i\n", get_month());
-    printf("weekday: %i\n", get_weekday());
-    printf("year: %i\n", get_year());
 }
 
 uint8_t DS1302RTC::get_seconds() {
@@ -118,21 +98,10 @@ uint8_t DS1302RTC::get_seconds() {
     // first bit is reserved for Clock Halt, 0 if running, 1 if halted
 
     // next 3 bits are the seconds tens part (like if 26 then 2, or if 5 then 0)
-    const uint8_t secondsTens = (rawSeconds >> 4) & 0x07;
-    // get the top 4 bits by shifting by 4 places and then ANDing with 0000_0111 (in hex 0x07)
-    // which means keep the last 3 bits (the ones with 1) and ignore (ie clear) the ones with 0s
-    // example:        01011000
-    // >> 4 :          10000101
-    // AND 00000111 :  00000101
-    // result :        decimal 5
+    const uint8_t secondsTens = get_bits(rawSeconds, 1, 3);
 
     // last 4 bits are the seconds units (like if 26 then the 6 part, or if 5 then 5)
-    const uint8_t secondsUnits = rawSeconds & 0x0F;
-    // get the bottom 4 bits by ANDing with 0000_1111 (in hex 0x0F)
-    // which means keep the last 4 bits (the ones with 1) and ignore (ie clear) the ones with 0s
-    // example:        01011001
-    // AND 00001111 :  00001001
-    // result :        decimal 9
+    const uint8_t secondsUnits = get_bits(rawSeconds, 4, 7);
 
     const uint8_t seconds = (secondsTens * 10) + secondsUnits;
     return seconds;
@@ -144,21 +113,10 @@ uint8_t DS1302RTC::get_minutes() {
     // first bit is blank/ignored
 
     // next 3 bits are the minutes tens part (like if 26 then 2, or if 5 then 0)
-    const uint8_t minutesTens = (rawMinutes >> 4) & 0x07;
-    // get the top 4 bits by shifting by 4 places and then ANDing with 0000_0111 (in hex 0x07)
-    // which means keep the last 3 bits (the ones with 1) and ignore (ie clear) the ones with 0s
-    // example:        01011000
-    // >> 4 :          10000101
-    // AND 00000111 :  00000101
-    // result :        decimal 5
+    const uint8_t minutesTens = get_bits(rawMinutes, 1, 3);
 
     // last 4 bits are the minutes units (like if 26 then the 6 part, or if 5 then 5)
-    const uint8_t minutesUnits = rawMinutes & 0x0F;
-    // get the bottom 4 bits by ANDing with 0000_1111 (in hex 0x0F)
-    // which means keep the last 4 bits (the ones with 1) and ignore (ie clear) the ones with 0s
-    // example:        01011001
-    // AND 00001111 :  00001001
-    // result :        decimal 9
+    const uint8_t minutesUnits = get_bits(rawMinutes, 4, 7);
 
     const uint8_t minutes = (minutesTens * 10) + minutesUnits;
     return minutes;
@@ -168,24 +126,18 @@ uint8_t DS1302RTC::get_hours() {
     const uint8_t rawHours = read_register(REG_HOURS);
 
     // first bit is 12/24 mode, if 1 then in 12hr mode, if 0 then in 24hr mode
-    const bool hoursMode = (rawHours >> 7) & 0x01;
+    const bool hoursMode = get_bits(rawHours, 0, 0);
 
     uint8_t hoursTens;
     if (!hoursMode) { // 24hr mode
         // bit 3 and 4 are hours tens part (like if 26 then 2, or if 5 then 0)
-        hoursTens = (rawHours >> 4) & 0x04;
-        // get the top 4 bits by shifting by 4 places and then ANDing with 0000_0011 (in hex 0x04)
-        // which means keep the last 2 bits (the ones with 1) and ignore (ie clear) the ones with 0s
-        // example:        01011000
-        // >> 4 :          10000101
-        // AND 00000011 :  00000001
-        // result :        decimal 1
+        hoursTens = get_bits(rawHours, 2, 3);
     } else { // 12hr mode
         // bit 4 is the hours tens part (like if 26 then 2, or if 5 then 0)
-        const uint8_t hoursTens12hr = (rawHours >> 4) & 0x01;
+        const uint8_t hoursTens12hr = get_bits(rawHours, 3, 3);
 
         // bit 5 is am or pm, 1 is pm, 0 is am
-        const uint8_t hoursPM = (rawHours >> 5) & 0x01;
+        const uint8_t hoursPM = get_bits(rawHours, 4, 4);
 
         // tens in 24hr mode is just tens in 12hr mode plus 1 if it is pm, ie if 10pm then 1+1 ie 2
         // (tens of 22 in 24hr mode)
@@ -193,7 +145,7 @@ uint8_t DS1302RTC::get_hours() {
     }
 
     // last 4 bits are the hours units (like if 26 then the 6 part, or if 5 then 5)
-    const uint8_t hoursUnits = rawHours & 0x0F;
+    const uint8_t hoursUnits = get_bits(rawHours, 4, 7);
 
     const uint8_t hours = (hoursTens * 10) + hoursUnits;
     return hours;
@@ -205,10 +157,10 @@ uint8_t DS1302RTC::get_date() {
     // first 2 bits are blank/ignored
 
     // next 2 bits are the date tens part (like if 26 then 2, or if 5 then 0)
-    const uint8_t dateTens = (rawDate >> 4) & 0x04;
+    const uint8_t dateTens = get_bits(rawDate, 2, 3);
 
     // last 4 bits are the date units (like if 26 then the 6 part, or if 5 then 5)
-    const uint8_t dateUnits = rawDate & 0x0F;
+    const uint8_t dateUnits = get_bits(rawDate, 4, 7);
 
     const uint8_t date = (dateTens * 10) + dateUnits;
     return date;
@@ -220,10 +172,10 @@ uint8_t DS1302RTC::get_month() {
     // first 3 bits are blank/ignored
 
     // next 1 bit is the month tens part (like if 12 then 1, or if 5 then 0)
-    const uint8_t monthTens = (rawMonth >> 4) & 0x01;
+    const uint8_t monthTens = get_bits(rawMonth, 3, 3);
 
     // last 4 bits are the month units (like if 12 then the 2 part, or if 5 then 5)
-    const uint8_t monthUnits = rawMonth & 0x0F;
+    const uint8_t monthUnits = get_bits(rawMonth, 4, 7);
 
     const uint8_t date = (monthTens * 10) + monthUnits;
     return date;
@@ -235,7 +187,7 @@ uint8_t DS1302RTC::get_weekday() {
     // first 5 bits are blank/ignored
 
     // last 3 bits are the weekday units
-    const uint8_t weekday = rawMonth & 0x07;
+    const uint8_t weekday = get_bits(rawMonth, 5, 7);
     return weekday;
 }
 
@@ -243,11 +195,24 @@ uint8_t DS1302RTC::get_year() {
     const uint8_t rawYear = read_register(REG_YEAR);
 
     // first 4 bits are the year tens part (like if 22 then 2, or if 5 then 0)
-    const uint8_t yearTens = (rawYear >> 4) & 0x0F;
+    const uint8_t yearTens = get_bits(rawYear, 0, 3);
 
     // last 4 bits are the year units (like if 12 then the 2 part, or if 5 then 5)
-    const uint8_t yearUnits = rawYear & 0x0F;
+    const uint8_t yearUnits = get_bits(rawYear, 4, 7);
 
     const uint8_t year = (yearTens * 10) + yearUnits;
     return year;
+}
+
+void DS1302RTC::set_running(bool running) {
+    const uint8_t rawSeconds = read_register(REG_SECONDS);
+    // get original seconds, we will only change the first bit
+    const uint8_t value = ((running ? 0 : 1) << 7) | rawSeconds;
+    // 0 if running, 1 if halted, put that in the first bit
+}
+
+void DS1302RTC::set_writable(bool writable) {
+    const uint8_t value = writable ? 0 : 0x80;
+    // 0 if writable, 0b1000_0000 (0x80) if write protected
+    write_register(REG_WRITE_PROTECT, value);
 }
