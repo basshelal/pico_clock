@@ -70,8 +70,10 @@ static void setup() {
 
 static void loop() {
     read_buttons();
-    log("%s %02i:%02i:%02i %02i %02i %02i %02i\n",
+    rtc.set_writable(!rtc.is_writable());
+    log("%s %s %02i:%02i:%02i %02i %02i %02i %02i\n",
         rtc.is_running() ? "on" : "off",
+        rtc.is_writable() ? "yes" : "no",
         rtc.get_hours(), rtc.get_minutes(), rtc.get_seconds(),
         rtc.get_weekday(), rtc.get_date(), rtc.get_month(), rtc.get_year());
 }

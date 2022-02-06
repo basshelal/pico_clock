@@ -212,7 +212,7 @@ void DS1302RTC::set_running(bool running) {
 }
 
 void DS1302RTC::set_writable(bool writable) {
-    const uint8_t value = writable ? 0 : 0x80;
-    // 0 if writable, 0b1000_0000 (0x80) if write protected
+    const uint8_t value = set_bits(0x00, 0, 0, !writable);
+    // 0 if writable, 1 if write protected at 0th bit
     write_register(REG_WRITE_PROTECT, value);
 }
