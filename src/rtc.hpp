@@ -2,6 +2,13 @@
 #define PICO_CLOCK_RTC_HPP
 
 class DS1302RTC {
+
+private:
+    uint8_t read_register(uint8_t reg);
+
+    void write_register(uint8_t reg, uint8_t value);
+
+public:
     enum WeekDay {
         MONDAY = 1,
         TUESDAY = 2,
@@ -12,12 +19,8 @@ class DS1302RTC {
         SUNDAY = 7,
     };
 
-private:
-    uint8_t read_register(uint8_t reg);
+    static const char *weekday_to_string(WeekDay weekDay);
 
-    void write_register(uint8_t reg, uint8_t value);
-
-public:
     void init();
 
     bool is_running();
@@ -36,7 +39,7 @@ public:
 
     uint8_t get_month();
 
-    uint8_t get_weekday();
+    WeekDay get_weekday();
 
     uint8_t get_year();
 

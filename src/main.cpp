@@ -66,16 +66,25 @@ static void setup() {
     on_light();
     initialize_screen_buttons();
     initialize_rtc();
+    rtc.set_writable(true);
+    rtc.set_running(true);
+
+    rtc.set_seconds(42);
+    rtc.set_minutes(42);
+    rtc.set_hours(6);
+    rtc.set_weekday(DS1302RTC::SATURDAY);
+    rtc.set_month(6);
+    rtc.set_date(6);
+    rtc.set_year(69);
 }
 
 static void loop() {
+    clear_console();
     read_buttons();
-    rtc.set_writable(!rtc.is_writable());
-    log("%s %s %02i:%02i:%02i %02i %02i %02i %02i\n",
-        rtc.is_running() ? "on" : "off",
-        rtc.is_writable() ? "yes" : "no",
+    log("%02i:%02i:%02i %s %02i-%02i-'%02i\n",
         rtc.get_hours(), rtc.get_minutes(), rtc.get_seconds(),
-        rtc.get_weekday(), rtc.get_date(), rtc.get_month(), rtc.get_year());
+        DS1302RTC::weekday_to_string(rtc.get_weekday()),
+        rtc.get_date(), rtc.get_month(), rtc.get_year());
 }
 
 int main() {

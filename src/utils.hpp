@@ -4,12 +4,21 @@
 #include "constants.hpp"
 #include "pico/stdlib.h"
 #include <string.h>
+#include <stdio.h>
 
 #if defined(DEBUG) && DEBUG > 0
 #define log(fmt, args...) printf(fmt, ##args)
 #else
 #define log(fmt, args...) /* Don't do anything in release builds */
 #endif
+
+/**
+ * Clears the console
+ * Taken from: https://stackoverflow.com/a/7660837/7175336
+ */
+inline void clear_console() {
+    printf("\e[1;1H\e[2J");
+}
 
 /**
  * Converts a byte (like uint8_t or int8_t) to a string with the binary representation of that byte
@@ -87,6 +96,13 @@ inline uint8_t set_bits(const uint8_t value, const uint8_t fromBit, const uint8_
         return value;
     // If fromBit and toBit are out of range or invalid, just return the original value
 
+    const uint8_t numberOfBits = (toBit - fromBit) + 1;
+    // number of bits that the final result will have, which is the number of bits the user wanted
+    // +1 because it's inclusive on both ends and we start from 0
+
+    const uint8_t leftSideLength = fromBit;
+    const uint8_t rightSideLength = 7 - toBit;
+
     // original -> 0101_1101
     // bits     -> xx10_10xx
 
@@ -95,15 +111,15 @@ inline uint8_t set_bits(const uint8_t value, const uint8_t fromBit, const uint8_
     // bits (before move) -> 0000_1010
     // bits (after move)  -> 0010_1000
 
-    const uint8_t shiftLeftSideBy = 7 - toBit;
-    const uint8_t leftSide = (value >> shiftLeftSideBy) << shiftLeftSideBy;
+    const uint8_t shiftLeftSideBy = numberOfBits + rightSideLength;
+    const uint8_t leftSide = ((uint8_t) (value >> shiftLeftSideBy)) << shiftLeftSideBy;
     // save left side of original by shifting it right then back to its original place
     // original   -> 0101_1101
     // >> fromBit -> 0000_0001
     // << fromBit -> 0100_0000
 
-    const uint8_t shiftRightSideBy = toBit;
-    const uint8_t rightSide = (value << shiftRightSideBy) >> shiftRightSideBy;
+    const uint8_t shiftRightSideBy = numberOfBits + leftSideLength;
+    const uint8_t rightSide = ((uint8_t) (value << shiftRightSideBy)) >> shiftRightSideBy;
     // save right side of original by shifting it left then back to its original place
     // original   -> 0101_1101
     // << toBit   -> 0100_0000

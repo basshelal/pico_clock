@@ -15,13 +15,35 @@
 #define REG_WRITE_PROTECT 7
 #define REG_TRICKLE_CHARGE 8
 
-static void enable() {
-    gpio_put(RTC_CS_PIN, 1);
+const char *DS1302RTC::weekday_to_string(DS1302RTC::WeekDay weekDay) {
+    const char *string;
+    switch (weekDay) {
+        case MONDAY:
+            string = "Monday";
+            break;
+        case TUESDAY:
+            string = "Tuesday";
+            break;
+        case WEDNESDAY:
+            string = "Wednesday";
+            break;
+        case THURSDAY:
+            string = "Thursday";
+            break;
+        case FRIDAY:
+            string = "Friday";
+            break;
+        case SATURDAY:
+            string = "Saturday";
+            break;
+        case SUNDAY:
+            string = "Sunday";
+            break;
+    }
+    return string;
 }
 
-static void disable() {
-    gpio_put(RTC_CS_PIN, 0);
-}
+// TODO: 07-Feb-2022 @basshelal: If we're in 12hr mode we should switch to 24hr mode!
 
 uint8_t DS1302RTC::read_register(uint8_t reg) {
     // The DS1302 is least-significant-bit first which the pico doesn't support, so we have to reverse the bits
@@ -34,15 +56,12 @@ uint8_t DS1302RTC::read_register(uint8_t reg) {
 
     uint8_t readValue;
 
-    enable();
+    gpio_put(RTC_CS_PIN, 1);
     spi_write_blocking(RTC_SPI, &cmdByte, 1);
     spi_read_blocking(RTC_SPI, 0, &readValue, 1);
-    disable();
+    gpio_put(RTC_CS_PIN, 0);
 
     uint8_t result = reverse_bits(readValue);
-    log("rtc read register %u ->\t0x%02x 0b%s\n",
-        reg, result, byte_to_binary(result));
-
     return result;
 }
 
@@ -53,10 +72,10 @@ void DS1302RTC::write_register(uint8_t reg, uint8_t value) {
     cmdByte = reverse_bits(cmdByte);
     value = reverse_bits(value);
 
-    enable();
+    gpio_put(RTC_CS_PIN, 1);
     spi_write_blocking(RTC_SPI, &cmdByte, 1);
     spi_write_blocking(RTC_SPI, &value, 1);
-    disable();
+    gpio_put(RTC_CS_PIN, 0);
 }
 
 void DS1302RTC::init() {
@@ -66,7 +85,7 @@ void DS1302RTC::init() {
 
     gpio_set_function(RTC_CS_PIN, GPIO_FUNC_SIO);
     gpio_set_dir(RTC_CS_PIN, GPIO_OUT);
-    disable();
+    gpio_put(RTC_CS_PIN, 0);
 
     spi_init(RTC_SPI, 500 KHz);
     spi_set_slave(RTC_SPI, false);
@@ -181,14 +200,14 @@ uint8_t DS1302RTC::get_month() {
     return date;
 }
 
-uint8_t DS1302RTC::get_weekday() {
+DS1302RTC::WeekDay DS1302RTC::get_weekday() {
     const uint8_t rawMonth = read_register(REG_WEEKDAY);
 
     // first 5 bits are blank/ignored
 
     // last 3 bits are the weekday units
     const uint8_t weekday = get_bits(rawMonth, 5, 7);
-    return weekday;
+    return (DS1302RTC::WeekDay) weekday;
 }
 
 uint8_t DS1302RTC::get_year() {
@@ -206,13 +225,130 @@ uint8_t DS1302RTC::get_year() {
 
 void DS1302RTC::set_running(bool running) {
     const uint8_t rawSeconds = read_register(REG_SECONDS);
-    // get original seconds, we will only change the first bit
-    const uint8_t value = ((running ? 0 : 1) << 7) | rawSeconds;
-    // 0 if running, 1 if halted, put that in the first bit
+    // get original seconds, we will only change the 0th bit
+    const uint8_t value = set_bits(rawSeconds, 0, 0, !running);
+    // 0 if running, 1 if halted at the 0th bit
+    write_register(REG_SECONDS, value);
 }
 
 void DS1302RTC::set_writable(bool writable) {
     const uint8_t value = set_bits(0x00, 0, 0, !writable);
     // 0 if writable, 1 if write protected at 0th bit
     write_register(REG_WRITE_PROTECT, value);
+}
+
+void DS1302RTC::set_baud_rate(bool baudrate) {
+    spi_set_baudrate(RTC_SPI, baudrate);
+}
+
+void DS1302RTC::set_seconds(uint8_t seconds) {
+    if (seconds < 0 || seconds > 59) seconds = 0;
+    // if user gave seconds out of range, set it to 0
+
+    const uint8_t secondsTens = seconds / 10;
+    const uint8_t secondsUnits = seconds % 10;
+
+    const uint8_t rawSeconds = read_register(REG_SECONDS);
+    // get original seconds, we will change all but the 0th bit which is the Clock Halt flag
+
+    uint8_t value = set_bits(rawSeconds, 1, 3, secondsTens);
+    // bits 1-3 are the seconds tens part
+
+    value = set_bits(value, 4, 7, secondsUnits);
+    // bits 4-7 are the seconds units part
+
+    write_register(REG_SECONDS, value);
+}
+
+void DS1302RTC::set_minutes(uint8_t minutes) {
+    if (minutes < 0 || minutes > 59) minutes = 0;
+    // if user gave minutes out of range, set it to 0
+
+    const uint8_t minutesTens = minutes / 10;
+    const uint8_t minutesUnits = minutes % 10;
+
+    uint8_t value = set_bits(0, 1, 3, minutesTens);
+    // bits 1-3 are the minutes tens part
+
+    value = set_bits(value, 4, 7, minutesUnits);
+    // bits 4-7 are the minutes units part
+
+    write_register(REG_MINUTES, value);
+}
+
+void DS1302RTC::set_hours(uint8_t hours) {
+    if (hours < 0 || hours > 23) hours = 0;
+    // if user gave hours out of range, set it to 0
+
+    const uint8_t hoursTens = hours / 10;
+    const uint8_t hoursUnits = hours % 10;
+
+    uint8_t value = 0;
+    // 0th bit is 12/24 mode, 1 if 12hr mode, 0 if 24hr mode, we always use 24hr mode
+
+    value = set_bits(value, 2, 3, hoursTens);
+    // bits 2-3 are the hours tens part
+
+    value = set_bits(value, 4, 7, hoursUnits);
+    // bits 4-7 are the hours units part
+
+    write_register(REG_HOURS, value);
+}
+
+void DS1302RTC::set_date(uint8_t date) {
+    if (date < 1 || date > 31) date = 1;
+    // if user gave date out of range, set it to 1
+
+    const uint8_t dateTens = date / 10;
+    const uint8_t dateUnits = date % 10;
+
+    uint8_t value = set_bits(0, 2, 3, dateTens);
+    // bits 2-3 are the date tens part
+
+    value = set_bits(value, 4, 7, dateUnits);
+    // bits 4-7 are the date units part
+
+    write_register(REG_DATE, value);
+}
+
+void DS1302RTC::set_month(uint8_t month) {
+    if (month < 1 || month > 12) month = 1;
+    // if user gave month out of range, set it to 1
+
+    const uint8_t monthTens = month / 10;
+    const uint8_t monthUnits = month % 10;
+
+    uint8_t value = set_bits(0, 3, 3, monthTens);
+    // bit 3 is the month tens part
+
+    value = set_bits(value, 4, 7, monthUnits);
+    // bits 4-7 are the month units part
+
+    write_register(REG_MONTH, value);
+}
+
+void DS1302RTC::set_weekday(WeekDay weekday) {
+    if (weekday < 1 || weekday > 7) weekday = MONDAY;
+    // if user gave weekday out of range, set it to Monday (1)
+
+    uint8_t value = set_bits(0, 5, 7, weekday);
+    // bits 5-7 are the weekday units
+
+    write_register(REG_WEEKDAY, value);
+}
+
+void DS1302RTC::set_year(uint8_t year) {
+    if (year < 0 || year > 99) year = 0;
+    // if user gave year out of range, set it to 0
+
+    const uint8_t yearTens = year / 10;
+    const uint8_t yearUnits = year % 10;
+
+    uint8_t value = set_bits(0, 0, 3, yearTens);
+    // bits 0-3 are the year tens part
+
+    value = set_bits(value, 4, 7, yearUnits);
+    // bits 4-7 are the year units part
+
+    write_register(REG_YEAR, value);
 }
