@@ -95,7 +95,7 @@ public:
 
     void set_writable(bool writable);
 
-    void set_baud_rate(bool baudrate);
+    void set_baud_rate(uint baudrate);
 
     void set_seconds(uint8_t seconds);
 

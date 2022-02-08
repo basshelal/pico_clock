@@ -20,8 +20,6 @@
 #define REG_WRITE_PROTECT 7
 #define REG_TRICKLE_CHARGE 8
 
-// TODO: 07-Feb-2022 @basshelal: If we're in 12hr mode we should switch to 24hr mode!
-
 uint8_t DS1302RTC::read_register(uint8_t reg) {
     // The DS1302 is least-significant-bit first which the pico doesn't support, so we have to reverse the bits
     // between spi calls to both read and write
@@ -264,7 +262,7 @@ void DS1302RTC::set_writable(bool writable) {
     write_register(REG_WRITE_PROTECT, value);
 }
 
-void DS1302RTC::set_baud_rate(bool baudrate) {
+void DS1302RTC::set_baud_rate(uint baudrate) {
     spi_set_baudrate(RTC_SPI, baudrate);
 }
 

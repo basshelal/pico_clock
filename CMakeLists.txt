@@ -21,7 +21,7 @@ add_executable(${NAME}
         src/rtc.hpp src/rtc.cpp
         src/battery.hpp src/battery.cpp
         src/utils.hpp src/utils.cpp
-        src/screen.hpp src/screen.cpp)
+        src/screen.hpp src/screen.cpp src/ui.cpp src/ui.hpp src/button_handler.cpp src/button_handler.hpp)
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)
@@ -34,6 +34,7 @@ target_link_libraries(${NAME}
         hardware_timer
         hardware_irq
         pico_display_2
+        pico_multicore
         )
 
 pico_enable_stdio_usb(pico_clock 1)

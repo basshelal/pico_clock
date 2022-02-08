@@ -10,64 +10,48 @@
 #include "rtc.hpp"
 #include "battery.hpp"
 #include "screen.hpp"
+#include "button_handler.hpp"
 
 // Global state variables
-static struct {
-    bool A;
-    bool B;
-    bool X;
-    bool Y;
-} screen_buttons;
-
 static DS1302RTC rtc = DS1302RTC();
 static DS1302RTC::DateTime currentDateTime = DS1302RTC::DateTime();
 static INA219 battery = INA219();
 static PimoroniScreen screen = PimoroniScreen();
-static char textBuffer[512];
+static char timeTextBuffer[64];
+static char dateTextBuffer[64];
+static char batteryTextBuffer[64];
+static ButtonHandler buttonHandler = ButtonHandler();
 
 // On light pin, useful to check if we are on
 static void on_light() {
-    gpio_set_dir(ON_LIGHT_PIN, /*out=*/ true);
+    gpio_set_dir(ON_LIGHT_PIN, GPIO_OUT);
     gpio_set_function(ON_LIGHT_PIN, GPIO_FUNC_SIO);
     gpio_put(ON_LIGHT_PIN, true);
 }
 
-static void initialize_screen_buttons() {
-    gpio_set_dir(A_BUTTON_PIN, GPIO_IN);
-    gpio_set_function(A_BUTTON_PIN, GPIO_FUNC_SIO);
-    gpio_pull_up(A_BUTTON_PIN);
-
-    gpio_set_dir(B_BUTTON_PIN, GPIO_IN);
-    gpio_set_function(B_BUTTON_PIN, GPIO_FUNC_SIO);
-    gpio_pull_up(B_BUTTON_PIN);
-
-    gpio_set_dir(X_BUTTON_PIN, GPIO_IN);
-    gpio_set_function(X_BUTTON_PIN, GPIO_FUNC_SIO);
-    gpio_pull_up(X_BUTTON_PIN);
-
-    gpio_set_dir(Y_BUTTON_PIN, GPIO_IN);
-    gpio_set_function(Y_BUTTON_PIN, GPIO_FUNC_SIO);
-    gpio_pull_up(Y_BUTTON_PIN);
-}
-
-static void read_buttons() {
-    screen_buttons.A = !gpio_get(A_BUTTON_PIN);
-    screen_buttons.B = !gpio_get(B_BUTTON_PIN);
-    screen_buttons.X = !gpio_get(X_BUTTON_PIN);
-    screen_buttons.Y = !gpio_get(Y_BUTTON_PIN);
-}
-
-static void updateScreenInterruptHandler() {
+static void update_screen() {
     irq_clear(SPI1_IRQ);
-    sprintf(textBuffer, "%02i:%02i:%02i %s %02i-%02i-%02i",
-            currentDateTime.hours, currentDateTime.minutes, currentDateTime.seconds,
+    sprintf(timeTextBuffer, "%02i:%02i:%02i",
+            currentDateTime.hours, currentDateTime.minutes, currentDateTime.seconds);
+    sprintf(dateTextBuffer, "%s %02i-%02i-%02i",
             DS1302RTC::weekday_to_string(currentDateTime.weekDay),
             currentDateTime.date, currentDateTime.month, currentDateTime.year);
+    sprintf(batteryTextBuffer, "mW: %02.02f mA: %02.02f mV: %02.02f V: %02.02f %02.02f%%\n",
+            battery.getPower_mW(),
+            battery.getCurrent_mA(),
+            battery.getShuntVoltage_mV(),
+            battery.getBusVoltage_V(),
+            battery.get_percentage());
     clear_console();
-    log("%s\n", textBuffer);
+    log("%s\n", timeTextBuffer);
+    log("%s\n", dateTextBuffer);
+    log("%s\n", batteryTextBuffer);
+    // at 13:55 it is displaying: mW 320 mA -81  mV -0.81 V 4.13
 
     screen.clear();
-    screen.display.text(textBuffer, Point(25, 70), PimoroniScreen::WIDTH - 25);
+    screen.display.text(timeTextBuffer, Point(25, 50), PimoroniScreen::WIDTH - 25, 4);
+    screen.display.text(dateTextBuffer, Point(25, 100), PimoroniScreen::WIDTH - 25, 4);
+    screen.display.text(batteryTextBuffer, Point(25, 150), PimoroniScreen::WIDTH - 25, 2);
     screen.update();
 }
 
@@ -82,11 +66,8 @@ static void setup() {
 
     stdio_usb_init();
     on_light();
-    initialize_screen_buttons();
 
-    //  irq_set_enabled(SPI1_IRQ, true);
-    //  irq_set_exclusive_handler(SPI1_IRQ, updateScreenInterruptHandler);
-    //  irq_set_priority(SPI1_IRQ, PICO_HIGHEST_IRQ_PRIORITY);
+    buttonHandler.init();
 
     rtc.init();
     rtc.set_writable(true);
@@ -99,16 +80,18 @@ static void setup() {
     rtc.set_month(6);
     rtc.set_date(6);
     rtc.set_year(69);
+
+    battery.init();
+    battery.powerSave(true);
 }
 
 static void loop() {
-    read_buttons();
+    buttonHandler.read();
 
     DS1302RTC::DateTime dateTime = rtc.get_date_time();
     if (!DS1302RTC::date_time_equals(currentDateTime, dateTime)) {
         currentDateTime = dateTime;
-        updateScreenInterruptHandler();
-        //    irq_set_pending(SPI1_IRQ);
+        update_screen();
     }
 }
 

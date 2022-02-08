@@ -1,3 +1,8 @@
+// All code taken from https://www.waveshare.com/wiki/Pico-UPS-B
+// From the "resources" section of the wiki
+// Only removed the "main" function and added a "get_percentage()" function
+// based on the original code's way of calculating battery percentage
+
 #include "battery.hpp"
 
 /*!
@@ -113,9 +118,9 @@ void INA219::setCalibration_32V_2A() {
 
     // Set Config register to take into account the settings above
     uint16_t config = INA219_CONFIG_BVOLTAGERANGE_32V |
-                      INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BADCRES_12BIT |
-                      INA219_CONFIG_SADCRES_12BIT_32S_17MS |
-                      INA219_CONFIG_MODE_SANDBVOLT_CONTINUOUS;
+            INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BADCRES_12BIT |
+            INA219_CONFIG_SADCRES_12BIT_32S_17MS |
+            INA219_CONFIG_MODE_SANDBVOLT_CONTINUOUS;
     wireWriteRegister(INA219_REG_CONFIG, config);
 }
 
@@ -181,7 +186,7 @@ float INA219::getBusVoltage_V() {
     uint16_t value;
     wireReadRegister(INA219_REG_BUSVOLTAGE, &value);
     // Shift to the right 3 to drop CNVR and OVF and multiply by LSB
-    return (int16_t)((value >> 3) * 4) * 0.001;
+    return (int16_t) ((value >> 3) * 4) * 0.001;
 }
 
 /*!
@@ -228,37 +233,16 @@ float INA219::getPower_mW() {
     return valueDec;
 }
 
+float INA219::get_percentage() {
+    const float percentage = ((getBusVoltage_V() - 3.0F) / 1.2F) * 100.0F;
+    return percentage > 100 ? 100 : // clamp to between 100 and 0
+           percentage < 0 ? 0 : percentage;
+}
 
-static int main_() {
-    float bus_voltage = 0;
-    float shunt_voltage = 0;
-    float power = 0;
-    float current = 0;
-    float P = 0;
-    uint16_t value;
-    INA219 ina(0x43);
+bool INA219::isCharging() {
+    return getShuntVoltage_mV() >= 0;
+}
 
-    const uint LED_PIN = PICO_DEFAULT_LED_PIN;
-    gpio_init(LED_PIN);
-    stdio_init_all();
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-    ina.init();
-
-    while (true) {
-        bus_voltage = ina.getBusVoltage_V();         // voltage on V- (load side)
-        current = ina.getCurrent_mA() / 1000;               // current in mA
-        P = (bus_voltage - 3) / 1.2 * 100;
-        if (P < 0)P = 0;
-        else if (P > 100)P = 100;
-
-        printf("Voltage:  %6.3f V\r\n", bus_voltage);
-        printf("Current:  %6.3f A\r\n", current);
-        printf("Percent:  %6.1f %%\r\n", P);
-        printf("\r\n");
-
-        gpio_put(LED_PIN, 1);
-        sleep_ms(1000);
-        gpio_put(LED_PIN, 0);
-        sleep_ms(1000);
-    }
+bool INA219::isDischarging() {
+    return getShuntVoltage_mV() > 0;
 }

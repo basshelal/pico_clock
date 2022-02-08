@@ -115,20 +115,31 @@ public:
 
     float getPower_mW();
 
+    float get_percentage();
+
     void powerSave(bool on);
 
     void wireWriteRegister(uint8_t reg, uint16_t value);
 
     void wireReadRegister(uint8_t reg, uint16_t *value);
 
+    bool isCharging();
+
+    bool isDischarging();
+
 private:
 
     uint8_t ina219_i2caddr;
+
     uint32_t ina219_calValue;
+
     // The following multipliers are used to convert raw current and power
     // values to mA and mW, taking into account the current config settings
+
     uint32_t ina219_currentDivider_mA;
+
     float ina219_powerMultiplier_mW;
+
 };
 
 #endif //PICO_CLOCK_BATTERY_HPP
