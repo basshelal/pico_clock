@@ -19,7 +19,53 @@ public:
         SUNDAY = 7,
     };
 
-    static const char *weekday_to_string(WeekDay weekDay);
+    struct DateTime {
+        uint8_t seconds;
+        uint8_t minutes;
+        uint8_t hours;
+        WeekDay weekDay;
+        uint8_t date;
+        uint8_t month;
+        uint8_t year;
+    };
+
+    static inline bool date_time_equals(DateTime a, DateTime b) {
+        return a.seconds == b.seconds &&
+               a.minutes == b.minutes &&
+               a.hours == b.hours &&
+               a.weekDay == b.weekDay &&
+               a.date == b.date &&
+               a.month == b.month &&
+               a.year == b.year;
+    }
+
+    static inline const char *weekday_to_string(WeekDay weekDay) {
+        const char *string;
+        switch (weekDay) {
+            case MONDAY:
+                string = "Mon";
+                break;
+            case TUESDAY:
+                string = "Tue";
+                break;
+            case WEDNESDAY:
+                string = "Wed";
+                break;
+            case THURSDAY:
+                string = "Thur";
+                break;
+            case FRIDAY:
+                string = "Fri";
+                break;
+            case SATURDAY:
+                string = "Sat";
+                break;
+            case SUNDAY:
+                string = "Sun";
+                break;
+        }
+        return string;
+    }
 
     void init();
 
@@ -42,6 +88,8 @@ public:
     WeekDay get_weekday();
 
     uint8_t get_year();
+
+    DateTime get_date_time();
 
     void set_running(bool running);
 

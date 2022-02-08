@@ -18,10 +18,10 @@ pico_sdk_init()
 add_executable(${NAME}
         src/main.cpp
         src/constants.hpp
-        src/rtc.cpp
-        src/rtc.hpp
-        src/battery.cpp
-        src/utils.hpp src/utils.cpp)
+        src/rtc.hpp src/rtc.cpp
+        src/battery.hpp src/battery.cpp
+        src/utils.hpp src/utils.cpp
+        src/screen.hpp src/screen.cpp)
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)
@@ -32,6 +32,7 @@ target_link_libraries(${NAME}
         hardware_i2c
         hardware_spi
         hardware_timer
+        hardware_irq
         pico_display_2
         )
 

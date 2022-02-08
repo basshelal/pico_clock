@@ -5,6 +5,11 @@
 #include "constants.hpp"
 #include "utils.hpp"
 
+/*
+ * Much of the ideas and fundamental issues were inspired by this:
+ * https://codebender.cc/library/DS1302#DS1302.cpp
+ */
+
 #define REG_SECONDS 0
 #define REG_MINUTES 1
 #define REG_HOURS 2
@@ -14,34 +19,6 @@
 #define REG_YEAR 6
 #define REG_WRITE_PROTECT 7
 #define REG_TRICKLE_CHARGE 8
-
-const char *DS1302RTC::weekday_to_string(DS1302RTC::WeekDay weekDay) {
-    const char *string;
-    switch (weekDay) {
-        case MONDAY:
-            string = "Monday";
-            break;
-        case TUESDAY:
-            string = "Tuesday";
-            break;
-        case WEDNESDAY:
-            string = "Wednesday";
-            break;
-        case THURSDAY:
-            string = "Thursday";
-            break;
-        case FRIDAY:
-            string = "Friday";
-            break;
-        case SATURDAY:
-            string = "Saturday";
-            break;
-        case SUNDAY:
-            string = "Sunday";
-            break;
-    }
-    return string;
-}
 
 // TODO: 07-Feb-2022 @basshelal: If we're in 12hr mode we should switch to 24hr mode!
 
@@ -111,9 +88,7 @@ uint DS1302RTC::get_baud_rate() {
     return spi_get_baudrate(RTC_SPI);
 }
 
-uint8_t DS1302RTC::get_seconds() {
-    const uint8_t rawSeconds = read_register(REG_SECONDS);
-
+static inline uint8_t decode_seconds(const uint8_t rawSeconds) {
     // first bit is reserved for Clock Halt, 0 if running, 1 if halted
 
     // next 3 bits are the seconds tens part (like if 26 then 2, or if 5 then 0)
@@ -126,9 +101,12 @@ uint8_t DS1302RTC::get_seconds() {
     return seconds;
 }
 
-uint8_t DS1302RTC::get_minutes() {
-    const uint8_t rawMinutes = read_register(REG_MINUTES);
+uint8_t DS1302RTC::get_seconds() {
+    const uint8_t rawSeconds = read_register(REG_SECONDS);
+    return decode_seconds(rawSeconds);
+}
 
+static inline uint8_t decode_minutes(const uint8_t rawMinutes) {
     // first bit is blank/ignored
 
     // next 3 bits are the minutes tens part (like if 26 then 2, or if 5 then 0)
@@ -141,9 +119,12 @@ uint8_t DS1302RTC::get_minutes() {
     return minutes;
 }
 
-uint8_t DS1302RTC::get_hours() {
-    const uint8_t rawHours = read_register(REG_HOURS);
+uint8_t DS1302RTC::get_minutes() {
+    const uint8_t rawMinutes = read_register(REG_MINUTES);
+    return decode_minutes(rawMinutes);
+}
 
+static inline uint8_t decode_hours(const uint8_t rawHours) {
     // first bit is 12/24 mode, if 1 then in 12hr mode, if 0 then in 24hr mode
     const bool hoursMode = get_bits(rawHours, 0, 0);
 
@@ -170,9 +151,12 @@ uint8_t DS1302RTC::get_hours() {
     return hours;
 }
 
-uint8_t DS1302RTC::get_date() {
-    const uint8_t rawDate = read_register(REG_DATE);
+uint8_t DS1302RTC::get_hours() {
+    const uint8_t rawHours = read_register(REG_HOURS);
+    return decode_hours(rawHours);
+}
 
+static inline uint8_t decode_date(const uint8_t rawDate) {
     // first 2 bits are blank/ignored
 
     // next 2 bits are the date tens part (like if 26 then 2, or if 5 then 0)
@@ -185,9 +169,12 @@ uint8_t DS1302RTC::get_date() {
     return date;
 }
 
-uint8_t DS1302RTC::get_month() {
-    const uint8_t rawMonth = read_register(REG_MONTH);
+uint8_t DS1302RTC::get_date() {
+    const uint8_t rawDate = read_register(REG_DATE);
+    return decode_date(rawDate);
+}
 
+static inline uint8_t decode_month(const uint8_t rawMonth) {
     // first 3 bits are blank/ignored
 
     // next 1 bit is the month tens part (like if 12 then 1, or if 5 then 0)
@@ -196,23 +183,29 @@ uint8_t DS1302RTC::get_month() {
     // last 4 bits are the month units (like if 12 then the 2 part, or if 5 then 5)
     const uint8_t monthUnits = get_bits(rawMonth, 4, 7);
 
-    const uint8_t date = (monthTens * 10) + monthUnits;
-    return date;
+    const uint8_t month = (monthTens * 10) + monthUnits;
+    return month;
 }
 
-DS1302RTC::WeekDay DS1302RTC::get_weekday() {
-    const uint8_t rawMonth = read_register(REG_WEEKDAY);
+uint8_t DS1302RTC::get_month() {
+    const uint8_t rawMonth = read_register(REG_MONTH);
+    return decode_month(rawMonth);
+}
 
+static inline uint8_t decode_weekday(const uint8_t rawWeekday) {
     // first 5 bits are blank/ignored
 
     // last 3 bits are the weekday units
-    const uint8_t weekday = get_bits(rawMonth, 5, 7);
-    return (DS1302RTC::WeekDay) weekday;
+    const uint8_t weekday = get_bits(rawWeekday, 5, 7);
+    return weekday;
 }
 
-uint8_t DS1302RTC::get_year() {
-    const uint8_t rawYear = read_register(REG_YEAR);
+DS1302RTC::WeekDay DS1302RTC::get_weekday() {
+    const uint8_t rawWeekday = read_register(REG_WEEKDAY);
+    return (DS1302RTC::WeekDay) decode_weekday(rawWeekday);
+}
 
+static inline uint8_t decode_year(const uint8_t rawYear) {
     // first 4 bits are the year tens part (like if 22 then 2, or if 5 then 0)
     const uint8_t yearTens = get_bits(rawYear, 0, 3);
 
@@ -221,6 +214,40 @@ uint8_t DS1302RTC::get_year() {
 
     const uint8_t year = (yearTens * 10) + yearUnits;
     return year;
+}
+
+uint8_t DS1302RTC::get_year() {
+    const uint8_t rawYear = read_register(REG_YEAR);
+    return decode_year(rawYear);
+}
+
+DS1302RTC::DateTime DS1302RTC::get_date_time() {
+    // Burst read mode
+    uint8_t cmdByte = 0xBF;
+    cmdByte = reverse_bits(cmdByte);
+
+    uint8_t readValue[8];
+
+    gpio_put(RTC_CS_PIN, 1);
+    spi_write_blocking(RTC_SPI, &cmdByte, 1);
+    spi_read_blocking(RTC_SPI, 0, readValue, 8);
+    gpio_put(RTC_CS_PIN, 0);
+
+    for (int i = 0; i < 8; ++i) {
+        readValue[i] = reverse_bits(readValue[i]);
+    }
+
+    DateTime dateTime = DateTime();
+
+    dateTime.seconds = decode_seconds(readValue[0]);
+    dateTime.minutes = decode_minutes(readValue[1]);
+    dateTime.hours = decode_hours(readValue[2]);
+    dateTime.date = decode_date(readValue[3]);
+    dateTime.month = decode_date(readValue[4]);
+    dateTime.weekDay = (DS1302RTC::WeekDay) decode_weekday(readValue[5]);
+    dateTime.year = decode_year(readValue[6]);
+
+    return dateTime;
 }
 
 void DS1302RTC::set_running(bool running) {
