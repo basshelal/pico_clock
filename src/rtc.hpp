@@ -52,7 +52,7 @@ public:
                 string = "Wed";
                 break;
             case THURSDAY:
-                string = "Thur";
+                string = "Thu";
                 break;
             case FRIDAY:
                 string = "Fri";

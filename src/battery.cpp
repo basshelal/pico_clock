@@ -118,9 +118,9 @@ void INA219::setCalibration_32V_2A() {
 
     // Set Config register to take into account the settings above
     uint16_t config = INA219_CONFIG_BVOLTAGERANGE_32V |
-            INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BADCRES_12BIT |
-            INA219_CONFIG_SADCRES_12BIT_32S_17MS |
-            INA219_CONFIG_MODE_SANDBVOLT_CONTINUOUS;
+                      INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BADCRES_12BIT |
+                      INA219_CONFIG_SADCRES_12BIT_32S_17MS |
+                      INA219_CONFIG_MODE_SANDBVOLT_CONTINUOUS;
     wireWriteRegister(INA219_REG_CONFIG, config);
 }
 
@@ -234,15 +234,36 @@ float INA219::getPower_mW() {
 }
 
 float INA219::get_percentage() {
-    const float percentage = ((getBusVoltage_V() - 3.0F) / 1.2F) * 100.0F;
-    return percentage > 100 ? 100 : // clamp to between 100 and 0
-           percentage < 0 ? 0 : percentage;
+    if (is_fully_charged()) {
+        current_is_charging = true;
+        current_percentage = 100.0F;
+        return current_percentage;
+    }
+    const float voltage = getBusVoltage_V();
+    const float percentage = ((voltage - 3.0F) / 1.2F) * 100.0F;
+
+    float result = percentage > 100 ? 100 : // clamp to between 100 and 0
+                   percentage < 0 ? 0 : percentage;
+
+    const bool currentlyCharging = is_charging();
+    if (current_is_charging != currentlyCharging) { // state has changed since last check
+        current_is_charging = currentlyCharging;
+    } else {
+        if (current_is_charging && result < current_percentage) result = current_percentage;
+        if (!current_is_charging && result > current_percentage) result = current_percentage;
+    }
+    current_percentage = result;
+    return result;
 }
 
-bool INA219::isCharging() {
-    return getShuntVoltage_mV() >= 0;
+bool INA219::is_charging() {
+    return getShuntVoltage_mV() >= 0.0F;
 }
 
-bool INA219::isDischarging() {
-    return getShuntVoltage_mV() > 0;
+bool INA219::is_discharging() {
+    return getShuntVoltage_mV() > 0.0F;
+}
+
+bool INA219::is_fully_charged() {
+    return getShuntVoltage_mV() == 0.0F;
 }

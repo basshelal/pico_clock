@@ -21,7 +21,10 @@ add_executable(${NAME}
         src/rtc.hpp src/rtc.cpp
         src/battery.hpp src/battery.cpp
         src/utils.hpp src/utils.cpp
-        src/screen.hpp src/screen.cpp src/ui.cpp src/ui.hpp src/button_handler.cpp src/button_handler.hpp)
+        src/ui.hpp
+        src/ui.cpp
+        src/button_handler.hpp
+        src/button_handler.cpp)
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)

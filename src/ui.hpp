@@ -1,41 +1,81 @@
 #ifndef PICO_CLOCK_UI_HPP
 #define PICO_CLOCK_UI_HPP
 
+#include "pico_graphics.hpp"
+#include "font8_data.hpp"
+#include "pico/stdlib.h"
+#include <stdio.h>
+#include "pico_display_2.hpp"
+#include "utils.hpp"
 
-#include "screen.hpp"
+using namespace pimoroni;
 
 class UI {
+public:
+    static const int WIDTH = PicoDisplay2::WIDTH;
+    static const int HEIGHT = PicoDisplay2::HEIGHT;
+    static const int AREA = WIDTH * HEIGHT;
+
+    static const int outsideMargin = 10;
+    static const int charWidth = 6;
+    static const int charHeight = 8;
+
 private:
-    PimoroniScreen screen;
+    uint16_t *buffer = (uint16_t *) malloc(AREA * sizeof(uint16_t));
+
+    PicoDisplay2 *display = new PicoDisplay2(buffer);
+
+    static const int batteryTextScale = 1;
+
+    Rect batteryRect = Rect(outsideMargin, outsideMargin,
+                            WIDTH - (2 * outsideMargin), batteryTextScale * charHeight);
+
+    static const int clockTextScale = 6;
+
+    Rect clockRect = Rect(outsideMargin * clockTextScale, outsideMargin * clockTextScale,
+                          (6 * charWidth * clockTextScale) + (2 * 2 * clockTextScale), 1 * charHeight * clockTextScale);
+
+    void clear_all();
+
+    void set_rect(const Rect &rect, Pen color);
+
+    void clear_rect(const Rect &rect);
+
+    uint8_t get_char_width(const char c);
+
+    int get_string_width(const char *string);
 
 public:
-    UI(PimoroniScreen &_screen) { screen = _screen; };
 
-    void update_battery_percentage(const float batteryPercent,
-                                   const bool isShowing = true);
+    void init();
 
-    void update_clock(const char *clockString,
-                      const bool isShowing = true);
-
-    void update_date(const char *dateString,
-                     const bool isShowing = true);
-
-    void update_message(const char *messageText,
-                        const bool isShowing = true);
-
-    void update_top_left_button(const char *text,
-                                const bool isShowing = true);
-
-    void update_bottom_left_button(const char *text,
-                                   const bool isShowing = true);
-
-    void update_top_right_button(const char *text,
+    void show_battery_percentage(const char *text,
                                  const bool isShowing = true);
 
-    void update_bottom_right_button(const char *text,
-                                    const bool isShowing = true);
+    void show_clock(const char *text,
+                    const bool isShowing = true);
 
-    void update_screen();
+    void show_date(const char *text,
+                   const bool isShowing = true);
+
+    void show_message(const char *text,
+                      const bool isShowing = true);
+
+    void show_top_left_button(const char *text,
+                              const bool isShowing = true);
+
+    void show_bottom_left_button(const char *text,
+                                 const bool isShowing = true);
+
+    void show_top_right_button(const char *text,
+                               const bool isShowing = true);
+
+    void show_bottom_right_button(const char *text,
+                                  const bool isShowing = true);
+
+    void set_brightness(const uint8_t percentage);
+
+    void update();
 
     // battery percentage at top left
     // middle large clock

@@ -12,6 +12,19 @@
 #define log(fmt, args...) /* Don't do anything in release builds */
 #endif
 
+static const char charLookup[96] = {
+        ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')',
+        '*', '+', ',', '-', '.', '/', '0', '1', '2', '3',
+        '4', '5', '6', '7', '8', '9', ':', ';', '<', '=',
+        '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F',
+        'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
+        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[',
+        '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e',
+        'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+        'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
+        'z', '{', '|', '}', '~', 0
+};
+
 /**
  * Clears the console
  * Taken from: https://stackoverflow.com/a/7660837/7175336
@@ -133,6 +146,13 @@ inline uint8_t set_bits(const uint8_t value, const uint8_t fromBit, const uint8_
     // | bits       -> 0110_1001
 
     return result;
+}
+
+inline uint8_t get_font_index_for_char(const char c) {
+    for (int i = 0; i < 96; ++i) {
+        if (c == charLookup[i]) return i;
+    }
+    return 96 - 1;
 }
 
 #endif //PICO_CLOCK_UTILS_HPP

@@ -123,11 +123,15 @@ public:
 
     void wireReadRegister(uint8_t reg, uint16_t *value);
 
-    bool isCharging();
+    bool is_charging();
 
-    bool isDischarging();
+    bool is_discharging();
 
+    bool is_fully_charged();
 private:
+
+    float current_percentage;
+    bool current_is_charging;
 
     uint8_t ina219_i2caddr;
 
