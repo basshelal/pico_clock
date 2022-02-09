@@ -24,10 +24,10 @@ void ButtonHandler::read() {
     onX = !gpio_get(X_BUTTON_PIN);
     onY = !gpio_get(Y_BUTTON_PIN);
 
-    if (onA && callbackA) callbackA();
-    if (onB && callbackB) callbackB();
-    if (onX && callbackX) callbackX();
-    if (onY && callbackY) callbackY();
+    if (callbackA) callbackA(onA);
+    if (callbackB) callbackB(onB);
+    if (callbackX) callbackX(onX);
+    if (callbackY) callbackY(onY);
 }
 
 void ButtonHandler::set_button_callback(const ButtonHandler::Button button,

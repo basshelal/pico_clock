@@ -4,7 +4,7 @@
 #include "constants.hpp"
 #include "pico/stdlib.h"
 
-typedef void (*ButtonCallback)(void);
+typedef void (*ButtonCallback)(bool buttonOn);
 
 class ButtonHandler {
 public:

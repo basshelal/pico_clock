@@ -67,6 +67,50 @@ public:
         return string;
     }
 
+    static inline const char *month_to_string(uint8_t month) {
+        if (month < 1 || month > 12) month = 1;
+        const char *string;
+        switch (month) {
+            case 1:
+                string = "Jan";
+                break;
+            case 2:
+                string = "Feb";
+                break;
+            case 3:
+                string = "Mar";
+                break;
+            case 4:
+                string = "Apr";
+                break;
+            case 5:
+                string = "May";
+                break;
+            case 6:
+                string = "Jun";
+                break;
+            case 7:
+                string = "Jul";
+                break;
+            case 8:
+                string = "Aug";
+                break;
+            case 9:
+                string = "Sep";
+                break;
+            case 10:
+                string = "Oct";
+                break;
+            case 11:
+                string = "Nov";
+                break;
+            case 12:
+                string = "Dec";
+                break;
+        }
+        return string;
+    }
+
     void init();
 
     bool is_running();

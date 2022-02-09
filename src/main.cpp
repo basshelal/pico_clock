@@ -1,5 +1,5 @@
 #include "pico/stdlib.h"
-#include "hardware/irq.h"
+#include "pico/multicore.h"
 #include <stdio.h>
 
 #include "constants.hpp"
@@ -8,16 +8,21 @@
 #include "battery.hpp"
 #include "button_handler.hpp"
 #include "ui.hpp"
+#include "power_manager.hpp"
 
 // Global state variables
 static DS1302RTC rtc = DS1302RTC();
 static DS1302RTC::DateTime currentDateTime = DS1302RTC::DateTime();
 static INA219 battery = INA219();
 static char timeTextBuffer[9]; // 8 chars in HH:MM:SS format + 1 for string NULL terminator
-static char dateTextBuffer[13]; // 12 chars in DOW DD-MM-YY + 1 for string NULL terminator
+static char dateTextBuffer[14]; // 13 chars in DOW DD-MMM-YY + 1 for string NULL terminator
 static char batteryTextBuffer[64];
 static ButtonHandler buttonHandler = ButtonHandler();
 static UI ui = UI();
+static PowerManager powerManager = PowerManager();
+
+static int core0SleepMillis = 100;
+static int core1SleepMillis = 1000 / 60;
 
 // On light pin, useful to check if we are on
 static void on_light() {
@@ -27,13 +32,12 @@ static void on_light() {
 }
 
 static void update_screen() {
-    irq_clear(SPI1_IRQ);
     sprintf(timeTextBuffer, "%02i:%02i:%02i",
             currentDateTime.hours, currentDateTime.minutes, currentDateTime.seconds);
-    sprintf(dateTextBuffer, "%s %02i-%02i-%02i",
+    sprintf(dateTextBuffer, "%s %02i-%s-%02i",
             DS1302RTC::weekday_to_string(currentDateTime.weekDay),
-            currentDateTime.date, currentDateTime.month, currentDateTime.year);
-    sprintf(batteryTextBuffer, "%02.f%% V: %02.02f mW: %02.02f mV: %02.02f",
+            currentDateTime.date, DS1302RTC::month_to_string(currentDateTime.month), currentDateTime.year);
+    sprintf(batteryTextBuffer, "%02.f%% %02.02fV %02.fmW %02.02fmV",
             battery.get_percentage(),
             battery.getBusVoltage_V(),
             battery.getPower_mW(),
@@ -45,12 +49,27 @@ static void update_screen() {
 
     ui.show_battery_percentage(batteryTextBuffer);
     ui.show_clock(timeTextBuffer);
+    ui.show_date(dateTextBuffer);
 
     ui.update();
 }
 
+static void core1_loop() {
+
+}
+
+static void launch_core1() {
+    while (true) {
+        core1_loop();
+        sleep_ms(powerManager.getCore1SleepMillis());
+    }
+}
+
+static bool stateA = false;
+
 static void setup() {
     set_sys_clock_48mhz(); // as low as we can reliably go, we do this to save power
+    powerManager.init();
 
     ui.init(); // first because we will override some gpio pins the screen uses
 
@@ -66,16 +85,22 @@ static void setup() {
     rtc.set_writable(true);
     rtc.set_running(true);
 
-    rtc.set_seconds(42);
-    rtc.set_minutes(42);
-    rtc.set_hours(6);
-    rtc.set_weekday(DS1302RTC::SATURDAY);
-    rtc.set_month(6);
-    rtc.set_date(6);
-    rtc.set_year(69);
-
     battery.init();
     battery.powerSave(true);
+
+    //multicore_launch_core1(launch_core1);
+
+    buttonHandler.set_button_callback(ButtonHandler::A, [](bool on) {
+        if (on && !stateA) {
+            ui.show_top_left_button("A", true);
+            stateA = true;
+            ui.update();
+        } else if (!on && stateA) {
+            ui.show_top_left_button("", false);
+            stateA = false;
+            ui.update();
+        }
+    });
 }
 
 static void loop() {
@@ -86,12 +111,15 @@ static void loop() {
         currentDateTime = dateTime;
         update_screen();
     }
+    if (battery.get_percentage() < 20) {
+        powerManager.enter_mode(PowerManager::SAVER);
+    }
 }
 
 int main() {
     setup();
     while (true) {
         loop();
-        sleep_ms(100);
+        sleep_ms(powerManager.getCore0SleepMillis());
     }
 }

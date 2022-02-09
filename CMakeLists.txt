@@ -24,7 +24,10 @@ add_executable(${NAME}
         src/ui.hpp
         src/ui.cpp
         src/button_handler.hpp
-        src/button_handler.cpp)
+        src/button_handler.cpp
+        src/custom_font.hpp
+        src/power_manager.hpp
+        src/power_manager.cpp)
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)

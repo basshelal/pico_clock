@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "pico_display_2.hpp"
 #include "utils.hpp"
+#include "custom_font.hpp"
 
 using namespace pimoroni;
 
@@ -28,12 +29,36 @@ private:
     static const int batteryTextScale = 1;
 
     Rect batteryRect = Rect(outsideMargin, outsideMargin,
-                            WIDTH - (2 * outsideMargin), batteryTextScale * charHeight);
+                            4 * charWidth * batteryTextScale, batteryTextScale * charHeight);
 
     static const int clockTextScale = 6;
 
-    Rect clockRect = Rect(outsideMargin * clockTextScale, outsideMargin * clockTextScale,
-                          (6 * charWidth * clockTextScale) + (2 * 2 * clockTextScale), 1 * charHeight * clockTextScale);
+    Rect clockRect = Rect(outsideMargin * clockTextScale, outsideMargin * 6,
+                          6 * charWidth * clockTextScale, 1 * charHeight * clockTextScale);
+
+    static const int dateTextScale = 2;
+
+    Rect dateRect = Rect(outsideMargin * clockTextScale, outsideMargin * 14,
+                         12 * charWidth * dateTextScale, 1 * charHeight * dateTextScale);
+
+    static const int messageTextScale = 2;
+
+    Rect messageRect = Rect(outsideMargin * clockTextScale, outsideMargin * 18,
+                            12 * charWidth * messageTextScale, 3 * charHeight * messageTextScale);
+
+    static const int buttonTextScale = 2;
+
+    Rect topLeftButtonRect = Rect(0, HEIGHT / 6,
+                                  4 * charWidth * buttonTextScale, 2 * charHeight * buttonTextScale);
+
+    Rect topRightButtonRect = Rect(WIDTH - (4 * charWidth * buttonTextScale), HEIGHT / 6,
+                                   4 * charWidth * buttonTextScale, 2 * charHeight * buttonTextScale);
+
+    Rect bottomLeftButtonRect = Rect(0, 4 * (HEIGHT / 6),
+                                     4 * charWidth * buttonTextScale, 2 * charHeight * buttonTextScale);
+
+    Rect bottomRightButtonRect = Rect(WIDTH - (4 * charWidth * buttonTextScale), 4 * (HEIGHT / 6),
+                                      4 * charWidth * buttonTextScale, 2 * charHeight * buttonTextScale);
 
     void clear_all();
 
