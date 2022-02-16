@@ -1,5 +1,5 @@
-#ifndef PICO_CLOCK_CONSTANTS_HPP
-#define PICO_CLOCK_CONSTANTS_HPP
+#ifndef PICO_CLOCK_CONSTANTS_H
+#define PICO_CLOCK_CONSTANTS_H
 
 #include "hardware/spi.h"
 
@@ -32,4 +32,4 @@
 #define Y_BUTTON_PIN 3
 #define SCREEN_LED_PIN 4
 
-#endif //PICO_CLOCK_CONSTANTS_HPP
+#endif //PICO_CLOCK_CONSTANTS_H

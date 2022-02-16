@@ -17,17 +17,16 @@ pico_sdk_init()
 
 add_executable(${NAME}
         src/main.cpp
-        src/constants.hpp
+        src/constants.h
         src/rtc.hpp src/rtc.cpp
-        src/battery.hpp src/battery.cpp
+        src/battery.h src/battery.c
         src/utils.hpp src/utils.cpp
         src/ui.hpp
         src/ui.cpp
-        src/button_handler.hpp
-        src/button_handler.cpp
+        src/button_handler.h
+        src/button_handler.c
         src/custom_font.hpp
-        src/power_manager.hpp
-        src/power_manager.cpp)
+        src/power_manager.h src/power_manager.c)
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)

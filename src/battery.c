@@ -3,7 +3,17 @@
 // Only removed the "main" function and added a "get_percentage()" function
 // based on the original code's way of calculating battery percentage
 
-#include "battery.hpp"
+#include "battery.h"
+
+static float current_percentage;
+static bool current_is_charging;
+static uint8_t ina219_i2caddr;
+static uint32_t ina219_calValue;
+
+// The following multipliers are used to convert raw current and power
+// values to mA and mW, taking into account the current config settings
+static uint32_t ina219_currentDivider_mA;
+static float ina219_powerMultiplier_mW;
 
 /*!
  *  @brief  Sends a single command byte over I2C
@@ -12,7 +22,7 @@
  *  @param  value
  *          value to write
  */
-void INA219::wireWriteRegister(uint8_t reg, uint16_t value) {
+static void wireWriteRegister(uint8_t reg, uint16_t value) {
 
     uint8_t tmpi[3];
     tmpi[0] = reg;
@@ -29,7 +39,7 @@ void INA219::wireWriteRegister(uint8_t reg, uint16_t value) {
  *  @param  *value
  *          read value
  */
-void INA219::wireReadRegister(uint8_t reg, uint16_t *value) {
+static void wireReadRegister(uint8_t reg, uint16_t *value) {
 
     uint8_t tmpi[2];
 
@@ -45,7 +55,7 @@ void INA219::wireReadRegister(uint8_t reg, uint16_t *value) {
  *          occurs at 3.2A.
  *  @note   These calculations assume a 0.1 ohm resistor is present
  */
-void INA219::setCalibration_32V_2A() {
+static void setCalibration32V2A() {
     // By default we use a pretty huge range for the input voltage,
     // which probably isn't the most appropriate choice for system
     // that don't use a lot of power.  But all of the calculations
@@ -129,7 +139,7 @@ void INA219::setCalibration_32V_2A() {
  *  @param  on
  *          boolean value
  */
-void INA219::powerSave(bool on) {
+static void powerSave(bool on) {
     uint16_t current;
     wireReadRegister(INA219_REG_CONFIG, &current);
     uint8_t next;
@@ -141,37 +151,11 @@ void INA219::powerSave(bool on) {
     wireWriteRegister(INA219_REG_CONFIG, next);
 }
 
-
-/*!
- *  @brief  Instantiates a new INA219 class
- *  @param addr the I2C address the device can be found on. Default is 0x40
- */
-INA219::INA219(uint8_t addr) {
-    ina219_i2caddr = addr;
-    ina219_currentDivider_mA = 0;
-    ina219_powerMultiplier_mW = 0.0f;
-}
-
-/*!
- *  @brief  Setups the HW (defaults to 32V and 2A for calibration values)
- *  @param theWire the TwoWire object to use
- */
-//void INA219::begin(TwoWire *theWire) {
-void INA219::init() {
-    //_i2c = theWire;
-    i2c_init(i2c1, 400 * 1000);
-    gpio_set_function(6, GPIO_FUNC_I2C);
-    gpio_set_function(7, GPIO_FUNC_I2C);
-    gpio_pull_up(6);
-    gpio_pull_up(7);
-    setCalibration_32V_2A();
-}
-
 /*!
  *  @brief  Gets the shunt voltage in mV (so +-327mV)
  *  @return the shunt voltage converted to millivolts
  */
-float INA219::getShuntVoltage_mV() {
+float batteryGetShuntVoltageMilliVolts() {
     uint16_t value;
     wireReadRegister(INA219_REG_SHUNTVOLTAGE, &value);
     return (int16_t) value * 0.01;
@@ -181,7 +165,7 @@ float INA219::getShuntVoltage_mV() {
  *  @brief  Gets the shunt voltage in volts
  *  @return the bus voltage converted to volts
  */
-float INA219::getBusVoltage_V() {
+float batteryGetBusVoltageVolts() {
 
     uint16_t value;
     wireReadRegister(INA219_REG_BUSVOLTAGE, &value);
@@ -194,7 +178,7 @@ float INA219::getBusVoltage_V() {
  *          config settings and current LSB
  *  @return the current reading convereted to milliamps
  */
-float INA219::getCurrent_mA() {
+float batteryGetCurrentMilliAmps() {
     uint16_t value;
 
     // Sometimes a sharp load will reset the INA219, which will
@@ -215,7 +199,7 @@ float INA219::getCurrent_mA() {
  *          config settings and current LSB
  *  @return power reading converted to milliwatts
  */
-float INA219::getPower_mW() {
+float batteryGetPowerMilliWatts() {
 
     uint16_t value;
 
@@ -233,19 +217,48 @@ float INA219::getPower_mW() {
     return valueDec;
 }
 
-float INA219::get_percentage() {
-    if (is_fully_charged()) {
+static bool isCharging() {
+    return batteryGetShuntVoltageMilliVolts() >= 0.0F;
+}
+
+static bool isDischarging() {
+    return batteryGetShuntVoltageMilliVolts() > 0.0F;
+}
+
+static bool isFullyCharged() {
+    return batteryGetShuntVoltageMilliVolts() == 0.0F;
+}
+
+/*!
+ *  @brief  Setups the HW (defaults to 32V and 2A for calibration values)
+ *  @param theWire the TwoWire object to use
+ */
+void batteryInit() {
+    ina219_i2caddr = INA219_ADDRESS;
+    ina219_currentDivider_mA = 0;
+    ina219_powerMultiplier_mW = 0.0f;
+    i2c_init(i2c1, 400 * 1000);
+    gpio_set_function(6, GPIO_FUNC_I2C);
+    gpio_set_function(7, GPIO_FUNC_I2C);
+    gpio_pull_up(6);
+    gpio_pull_up(7);
+    setCalibration32V2A();
+    powerSave(true);
+}
+
+float batteryGetPercentage() {
+    if (isFullyCharged()) {
         current_is_charging = true;
         current_percentage = 100.0F;
         return current_percentage;
     }
-    const float voltage = getBusVoltage_V();
+    const float voltage = batteryGetBusVoltageVolts();
     const float percentage = ((voltage - 3.0F) / 1.2F) * 100.0F;
 
     float result = percentage > 100 ? 100 : // clamp to between 100 and 0
                    percentage < 0 ? 0 : percentage;
 
-    const bool currentlyCharging = is_charging();
+    const bool currentlyCharging = isCharging();
     if (current_is_charging != currentlyCharging) { // state has changed since last check
         current_is_charging = currentlyCharging;
     } else {
@@ -254,16 +267,4 @@ float INA219::get_percentage() {
     }
     current_percentage = result;
     return result;
-}
-
-bool INA219::is_charging() {
-    return getShuntVoltage_mV() >= 0.0F;
-}
-
-bool INA219::is_discharging() {
-    return getShuntVoltage_mV() > 0.0F;
-}
-
-bool INA219::is_fully_charged() {
-    return getShuntVoltage_mV() == 0.0F;
 }

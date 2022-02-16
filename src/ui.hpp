@@ -74,29 +74,21 @@ public:
 
     void init();
 
-    void show_battery_percentage(const char *text,
-                                 const bool isShowing = true);
+    void show_battery_percentage(const char *text);
 
-    void show_clock(const char *text,
-                    const bool isShowing = true);
+    void show_clock(const char *text);
 
-    void show_date(const char *text,
-                   const bool isShowing = true);
+    void show_date(const char *text);
 
-    void show_message(const char *text,
-                      const bool isShowing = true);
+    void show_message(const char *text);
 
-    void show_top_left_button(const char *text,
-                              const bool isShowing = true);
+    void show_top_left_button(const char *text);
 
-    void show_bottom_left_button(const char *text,
-                                 const bool isShowing = true);
+    void show_bottom_left_button(const char *text);
 
-    void show_top_right_button(const char *text,
-                               const bool isShowing = true);
+    void show_top_right_button(const char *text);
 
-    void show_bottom_right_button(const char *text,
-                                  const bool isShowing = true);
+    void show_bottom_right_button(const char *text);
 
     void set_brightness(const uint8_t percentage);
 

@@ -1,10 +1,14 @@
-#ifndef PICO_CLOCK_BATTERY_HPP
-#define PICO_CLOCK_BATTERY_HPP
+#ifndef PICO_CLOCK_BATTERY_H
+#define PICO_CLOCK_BATTERY_H
 
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** default I2C address **/
 #define INA219_ADDRESS (0x43)
@@ -95,55 +99,20 @@ enum {
     INA219_CONFIG_MODE_SANDBVOLT_CONTINUOUS
 };
 
-/*!
- *   @brief  Class that stores state and functions for interacting with INA219
- *  current/power monitor IC
- */
-class INA219 {
-public:
-    INA219(uint8_t addr = INA219_ADDRESS);
+float batteryGetShuntVoltageMilliVolts();
 
-    void init();
+float batteryGetBusVoltageVolts();
 
-    void setCalibration_32V_2A();
+float batteryGetCurrentMilliAmps();
 
-    float getBusVoltage_V();
+float batteryGetPowerMilliWatts();
 
-    float getShuntVoltage_mV();
+void batteryInit();
 
-    float getCurrent_mA();
+float batteryGetPercentage();
 
-    float getPower_mW();
+#ifdef __cplusplus
+}
+#endif
 
-    float get_percentage();
-
-    void powerSave(bool on);
-
-    void wireWriteRegister(uint8_t reg, uint16_t value);
-
-    void wireReadRegister(uint8_t reg, uint16_t *value);
-
-    bool is_charging();
-
-    bool is_discharging();
-
-    bool is_fully_charged();
-private:
-
-    float current_percentage;
-    bool current_is_charging;
-
-    uint8_t ina219_i2caddr;
-
-    uint32_t ina219_calValue;
-
-    // The following multipliers are used to convert raw current and power
-    // values to mA and mW, taking into account the current config settings
-
-    uint32_t ina219_currentDivider_mA;
-
-    float ina219_powerMultiplier_mW;
-
-};
-
-#endif //PICO_CLOCK_BATTERY_HPP
+#endif //PICO_CLOCK_BATTERY_H

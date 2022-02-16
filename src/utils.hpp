@@ -1,7 +1,7 @@
 #ifndef PICO_CLOCK_UTILS_HPP
 #define PICO_CLOCK_UTILS_HPP
 
-#include "constants.hpp"
+#include "constants.h"
 #include "pico/stdlib.h"
 #include <string.h>
 #include <stdio.h>

@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "rtc.hpp"
-#include "constants.hpp"
+#include "constants.h"
 #include "utils.hpp"
 
 /*

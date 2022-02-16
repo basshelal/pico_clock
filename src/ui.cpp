@@ -69,18 +69,18 @@ void UI::init() {
     display->set_pen(WHITE());
 }
 
-void UI::show_battery_percentage(const char *text, const bool isShowing) {
+void UI::show_battery_percentage(const char *text) {
     set_rect(batteryRect, BLACK());
-    if (isShowing) {
+    if (text != nullptr) {
         batteryRect.w = (get_string_width(text) * batteryTextScale);
         display->text(text, Point(batteryRect.x, batteryRect.y),
                       WIDTH - outsideMargin, batteryTextScale);
     }
 }
 
-void UI::show_clock(const char *text, const bool isShowing) {
+void UI::show_clock(const char *text) {
     set_rect(clockRect, BLACK());
-    if (isShowing) {
+    if (text != nullptr) {
         clockRect.w = (get_string_width(text) * clockTextScale);
         clockRect.x = (WIDTH / 2) - (clockRect.w / 2);
         display->text(text, Point(clockRect.x, clockRect.y),
@@ -88,9 +88,9 @@ void UI::show_clock(const char *text, const bool isShowing) {
     }
 }
 
-void UI::show_date(const char *text, const bool isShowing) {
+void UI::show_date(const char *text) {
     set_rect(dateRect, BLACK());
-    if (isShowing) {
+    if (text) {
         dateRect.w = (get_string_width(text) * dateTextScale);
         dateRect.x = (WIDTH / 2) - (dateRect.w / 2);
         display->text(text, Point(dateRect.x, dateRect.y),
@@ -98,9 +98,9 @@ void UI::show_date(const char *text, const bool isShowing) {
     }
 }
 
-void UI::show_message(const char *text, const bool isShowing) {
+void UI::show_message(const char *text) {
     set_rect(messageRect, BLACK());
-    if (isShowing) {
+    if (text != nullptr) {
         const int wrapWidth = WIDTH - (2 * 4 * charWidth * buttonTextScale);
         const int fullLineWidth = (get_string_width(text) * messageTextScale);
         int lineWidth = fullLineWidth;
@@ -115,9 +115,9 @@ void UI::show_message(const char *text, const bool isShowing) {
     }
 }
 
-void UI::show_top_left_button(const char *text, const bool isShowing) {
+void UI::show_top_left_button(const char *text) {
     set_rect(topLeftButtonRect, BLACK());
-    if (isShowing) {
+    if (text != nullptr) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (get_string_width(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
@@ -131,9 +131,9 @@ void UI::show_top_left_button(const char *text, const bool isShowing) {
     }
 }
 
-void UI::show_bottom_left_button(const char *text, const bool isShowing) {
+void UI::show_bottom_left_button(const char *text) {
     set_rect(bottomLeftButtonRect, BLACK());
-    if (isShowing) {
+    if (text != nullptr) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (get_string_width(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
@@ -147,9 +147,9 @@ void UI::show_bottom_left_button(const char *text, const bool isShowing) {
     }
 }
 
-void UI::show_top_right_button(const char *text, const bool isShowing) {
+void UI::show_top_right_button(const char *text) {
     set_rect(topRightButtonRect, BLACK());
-    if (isShowing) {
+    if (text != nullptr) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (get_string_width(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
@@ -163,9 +163,9 @@ void UI::show_top_right_button(const char *text, const bool isShowing) {
     }
 }
 
-void UI::show_bottom_right_button(const char *text, const bool isShowing) {
+void UI::show_bottom_right_button(const char *text) {
     set_rect(bottomRightButtonRect, BLACK());
-    if (isShowing) {
+    if (text != nullptr) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (get_string_width(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
