@@ -21,10 +21,9 @@ add_executable(${NAME}
         src/rtc.h src/rtc.c
         src/battery.h src/battery.c
         src/utils.hpp src/utils.cpp
-        src/ui.hpp
-        src/ui.cpp
-        src/button_handler.h
-        src/button_handler.c
+        src/display.cpp src/display.h
+        src/ui.h src/ui.c
+        src/button_handler.h src/button_handler.c
         src/custom_font.hpp
         src/power_manager.h src/power_manager.c)
 
