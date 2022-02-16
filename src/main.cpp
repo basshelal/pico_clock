@@ -5,35 +5,36 @@
 
 #include "constants.h"
 #include "utils.hpp"
-#include "rtc.hpp"
+#include "rtc.h"
 #include "battery.h"
 #include "button_handler.h"
 #include "ui.hpp"
 #include "power_manager.h"
 
-// TODO: 09-Feb-2022 @basshelal: Use a consistent formatting, I think I will stick with Java style
-
 // Global state variables
-static DS1302RTC rtc = DS1302RTC();
-static DS1302RTC::DateTime currentDateTime = DS1302RTC::DateTime();
+static DateTime currentDateTime;
 static char timeTextBuffer[9]; // 8 chars in HH:MM:SS format + 1 for string NULL terminator
 static char dateTextBuffer[14]; // 13 chars in DOW DD-MMM-YY + 1 for string NULL terminator
 static char batteryTextBuffer[64];
 static UI ui = UI();
 
 // On light pin, useful to check if we are on
-static void on_light() {
+static void onLight() {
     gpio_set_dir(ON_LIGHT_PIN, GPIO_OUT);
     gpio_set_function(ON_LIGHT_PIN, GPIO_FUNC_SIO);
     gpio_put(ON_LIGHT_PIN, true);
 }
 
-static void update_screen() {
+static void requestUpdateToUICore() {
+    multicore_fifo_push_blocking(true);
+}
+
+static void updateUI() {
     sprintf(timeTextBuffer, "%02i:%02i:%02i",
             currentDateTime.hours, currentDateTime.minutes, currentDateTime.seconds);
     sprintf(dateTextBuffer, "%s %02i-%s-%02i",
-            DS1302RTC::weekday_to_string(currentDateTime.weekDay),
-            currentDateTime.date, DS1302RTC::month_to_string(currentDateTime.month), currentDateTime.year);
+            weekdayToString(currentDateTime.weekDay),
+            currentDateTime.date, monthToString(currentDateTime.month), currentDateTime.year);
     sprintf(batteryTextBuffer, "%02.f%% %02.02fV %02.fmW %02.02fmV",
             batteryGetPercentage(),
             batteryGetBusVoltageVolts(),
@@ -44,42 +45,54 @@ static void update_screen() {
     log("%s\n", dateTextBuffer);
     log("%s\n", batteryTextBuffer);
 
-    ui.show_battery_percentage(batteryTextBuffer);
-    ui.show_clock(timeTextBuffer);
-    ui.show_date(dateTextBuffer);
+    ui.showBatteryPercentage(batteryTextBuffer);
+    ui.showClock(timeTextBuffer);
+    ui.showDate(dateTextBuffer);
 
-    ui.update();
+    requestUpdateToUICore();
 }
 
-static void core1_loop() {
-
+static void loopUICore() {
+    int updateRequestCount = 0;
+    while (multicore_fifo_rvalid()) {
+        bool isDirty = multicore_fifo_pop_blocking();
+        if (isDirty) updateRequestCount++;
+    }
+    if (updateRequestCount > 0) {
+        ui.update();
+        printf("Update requests: %i\n", updateRequestCount);
+    }
 }
 
-static void launch_core1() {
+static void launchUICore() {
     while (true) {
-        core1_loop();
-        sleep_ms(32);
+        loopUICore();
+        sleep_ms(1000 / 30);
     }
 }
 
 static void buttonACallback(bool buttonOn) {
-    if (buttonOn) ui.show_top_left_button("A");
-    else ui.show_top_left_button(NULL);
+    if (buttonOn) ui.showTopLeftButton("A");
+    else ui.showTopLeftButton(NULL);
+    requestUpdateToUICore();
 }
 
 static void buttonBCallback(bool buttonOn) {
-    if (buttonOn) ui.show_bottom_left_button("B");
-    else ui.show_bottom_left_button(NULL);
+    if (buttonOn) ui.showBottomLeftButton("B");
+    else ui.showBottomLeftButton(NULL);
+    requestUpdateToUICore();
 }
 
 static void buttonXCallback(bool buttonOn) {
-    if (buttonOn) ui.show_top_right_button("X");
-    else ui.show_top_right_button(NULL);
+    if (buttonOn) ui.showTopRightButton("X");
+    else ui.showTopRightButton(NULL);
+    requestUpdateToUICore();
 }
 
 static void buttonYCallback(bool buttonOn) {
-    if (buttonOn) ui.show_bottom_right_button("Y");
-    else ui.show_bottom_right_button(NULL);
+    if (buttonOn) ui.showBottomRightButton("Y");
+    else ui.showBottomRightButton(NULL);
+    requestUpdateToUICore();
 }
 
 static void setup() {
@@ -88,11 +101,11 @@ static void setup() {
 
     ui.init(); // first because we will override some gpio pins the screen uses
 
-    ui.set_brightness(100);
+    ui.setBrightness(100);
     ui.update();
 
     stdio_usb_init();
-    on_light();
+    onLight();
 
     buttonHandlerInit();
     buttonHandlerSetCallback(A, buttonACallback);
@@ -100,20 +113,20 @@ static void setup() {
     buttonHandlerSetCallback(X, buttonXCallback);
     buttonHandlerSetCallback(Y, buttonYCallback);
 
-    rtc.init();
-    rtc.set_writable(true);
-    rtc.set_running(true);
+    rtcInit();
+    rtcSetWritable(true);
+    rtcSetRunning(true);
 
     batteryInit();
 
-    multicore_launch_core1(launch_core1);
+    multicore_launch_core1(launchUICore);
 }
 
 static void loop() {
-    DS1302RTC::DateTime dateTime = rtc.get_date_time();
-    if (!DS1302RTC::date_time_equals(currentDateTime, dateTime)) {
+    DateTime dateTime = rtcGetDateTime();
+    if (!dateTimeEquals(currentDateTime, dateTime)) {
         currentDateTime = dateTime;
-        update_screen();
+        updateUI();
     }
 }
 
@@ -121,6 +134,6 @@ int main() {
     setup();
     while (true) {
         loop();
-        powerManagerLoop();
+        sleep_ms(1000 / 4);
     }
 }

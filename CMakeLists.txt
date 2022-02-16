@@ -18,7 +18,7 @@ pico_sdk_init()
 add_executable(${NAME}
         src/main.cpp
         src/constants.h
-        src/rtc.hpp src/rtc.cpp
+        src/rtc.h src/rtc.c
         src/battery.h src/battery.c
         src/utils.hpp src/utils.cpp
         src/ui.hpp

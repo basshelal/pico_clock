@@ -1,7 +1,7 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
-#include "rtc.hpp"
+#include "rtc.h"
 #include "constants.h"
 #include "utils.hpp"
 
@@ -20,7 +20,7 @@
 #define REG_WRITE_PROTECT 7
 #define REG_TRICKLE_CHARGE 8
 
-uint8_t DS1302RTC::read_register(uint8_t reg) {
+static uint8_t readRegister(uint8_t reg) {
     // The DS1302 is least-significant-bit first which the pico doesn't support, so we have to reverse the bits
     // between spi calls to both read and write
 
@@ -40,7 +40,7 @@ uint8_t DS1302RTC::read_register(uint8_t reg) {
     return result;
 }
 
-void DS1302RTC::write_register(uint8_t reg, uint8_t value) {
+static void writeRegister(uint8_t reg, uint8_t value) {
     uint8_t cmdByte = 0x80; // 10000000 first bit is mandatory for communication, last bit signifies read 0 means write
     cmdByte |= (reg << 1);
 
@@ -53,7 +53,7 @@ void DS1302RTC::write_register(uint8_t reg, uint8_t value) {
     gpio_put(RTC_CS_PIN, 0);
 }
 
-void DS1302RTC::init() {
+void rtcInit() {
     gpio_set_function(RTC_MISO_PIN, GPIO_FUNC_SPI);
     gpio_set_function(RTC_MOSI_PIN, GPIO_FUNC_SPI);
     gpio_set_function(RTC_SCK_PIN, GPIO_FUNC_SPI);
@@ -68,25 +68,25 @@ void DS1302RTC::init() {
     spi_set_format(RTC_SPI, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 }
 
-bool DS1302RTC::is_running() {
-    const uint8_t rawSeconds = read_register(REG_SECONDS);
+bool rtcIsRunning() {
+    const uint8_t rawSeconds = readRegister(REG_SECONDS);
     // first bit is reserved for Clock Halt, 0 if running, 1 if halted
     bool isHalted = get_bits(rawSeconds, 0, 0);
     return !isHalted;
 }
 
-bool DS1302RTC::is_writable() {
-    const uint8_t rawWriteProtect = read_register(REG_WRITE_PROTECT);
+bool rtcIsWritable() {
+    const uint8_t rawWriteProtect = readRegister(REG_WRITE_PROTECT);
     // first bit is reserved for Write Protect, 0 if writable, 1 if write protected
     bool isProtected = get_bits(rawWriteProtect, 0, 0);
     return !isProtected;
 }
 
-uint DS1302RTC::get_baud_rate() {
+uint rtcGetBaudRate() {
     return spi_get_baudrate(RTC_SPI);
 }
 
-static inline uint8_t decode_seconds(const uint8_t rawSeconds) {
+static inline uint8_t decodeSeconds(const uint8_t rawSeconds) {
     // first bit is reserved for Clock Halt, 0 if running, 1 if halted
 
     // next 3 bits are the seconds tens part (like if 26 then 2, or if 5 then 0)
@@ -99,12 +99,12 @@ static inline uint8_t decode_seconds(const uint8_t rawSeconds) {
     return seconds;
 }
 
-uint8_t DS1302RTC::get_seconds() {
-    const uint8_t rawSeconds = read_register(REG_SECONDS);
-    return decode_seconds(rawSeconds);
+uint8_t rtcGetSeconds() {
+    const uint8_t rawSeconds = readRegister(REG_SECONDS);
+    return decodeSeconds(rawSeconds);
 }
 
-static inline uint8_t decode_minutes(const uint8_t rawMinutes) {
+static inline uint8_t decodeMinutes(const uint8_t rawMinutes) {
     // first bit is blank/ignored
 
     // next 3 bits are the minutes tens part (like if 26 then 2, or if 5 then 0)
@@ -117,12 +117,12 @@ static inline uint8_t decode_minutes(const uint8_t rawMinutes) {
     return minutes;
 }
 
-uint8_t DS1302RTC::get_minutes() {
-    const uint8_t rawMinutes = read_register(REG_MINUTES);
-    return decode_minutes(rawMinutes);
+uint8_t rtcGetMinutes() {
+    const uint8_t rawMinutes = readRegister(REG_MINUTES);
+    return decodeMinutes(rawMinutes);
 }
 
-static inline uint8_t decode_hours(const uint8_t rawHours) {
+static inline uint8_t decodeHours(const uint8_t rawHours) {
     // first bit is 12/24 mode, if 1 then in 12hr mode, if 0 then in 24hr mode
     const bool hoursMode = get_bits(rawHours, 0, 0);
 
@@ -149,12 +149,12 @@ static inline uint8_t decode_hours(const uint8_t rawHours) {
     return hours;
 }
 
-uint8_t DS1302RTC::get_hours() {
-    const uint8_t rawHours = read_register(REG_HOURS);
-    return decode_hours(rawHours);
+uint8_t rtcGetHours() {
+    const uint8_t rawHours = readRegister(REG_HOURS);
+    return decodeHours(rawHours);
 }
 
-static inline uint8_t decode_date(const uint8_t rawDate) {
+static inline uint8_t decodeDate(const uint8_t rawDate) {
     // first 2 bits are blank/ignored
 
     // next 2 bits are the date tens part (like if 26 then 2, or if 5 then 0)
@@ -167,12 +167,12 @@ static inline uint8_t decode_date(const uint8_t rawDate) {
     return date;
 }
 
-uint8_t DS1302RTC::get_date() {
-    const uint8_t rawDate = read_register(REG_DATE);
-    return decode_date(rawDate);
+uint8_t rtcGetDate() {
+    const uint8_t rawDate = readRegister(REG_DATE);
+    return decodeDate(rawDate);
 }
 
-static inline uint8_t decode_month(const uint8_t rawMonth) {
+static inline uint8_t decodeMonth(const uint8_t rawMonth) {
     // first 3 bits are blank/ignored
 
     // next 1 bit is the month tens part (like if 12 then 1, or if 5 then 0)
@@ -185,12 +185,12 @@ static inline uint8_t decode_month(const uint8_t rawMonth) {
     return month;
 }
 
-uint8_t DS1302RTC::get_month() {
-    const uint8_t rawMonth = read_register(REG_MONTH);
-    return decode_month(rawMonth);
+uint8_t rtcGetMonth() {
+    const uint8_t rawMonth = readRegister(REG_MONTH);
+    return decodeMonth(rawMonth);
 }
 
-static inline uint8_t decode_weekday(const uint8_t rawWeekday) {
+static inline uint8_t decodeWeekday(const uint8_t rawWeekday) {
     // first 5 bits are blank/ignored
 
     // last 3 bits are the weekday units
@@ -198,12 +198,12 @@ static inline uint8_t decode_weekday(const uint8_t rawWeekday) {
     return weekday;
 }
 
-DS1302RTC::WeekDay DS1302RTC::get_weekday() {
-    const uint8_t rawWeekday = read_register(REG_WEEKDAY);
-    return (DS1302RTC::WeekDay) decode_weekday(rawWeekday);
+WeekDay rtcGetWeekday() {
+    const uint8_t rawWeekday = readRegister(REG_WEEKDAY);
+    return (WeekDay) decodeWeekday(rawWeekday);
 }
 
-static inline uint8_t decode_year(const uint8_t rawYear) {
+static inline uint8_t decodeYear(const uint8_t rawYear) {
     // first 4 bits are the year tens part (like if 22 then 2, or if 5 then 0)
     const uint8_t yearTens = get_bits(rawYear, 0, 3);
 
@@ -214,12 +214,12 @@ static inline uint8_t decode_year(const uint8_t rawYear) {
     return year;
 }
 
-uint8_t DS1302RTC::get_year() {
-    const uint8_t rawYear = read_register(REG_YEAR);
-    return decode_year(rawYear);
+uint8_t rtcGetYear() {
+    const uint8_t rawYear = readRegister(REG_YEAR);
+    return decodeYear(rawYear);
 }
 
-DS1302RTC::DateTime DS1302RTC::get_date_time() {
+DateTime rtcGetDateTime() {
     // Burst read mode
     uint8_t cmdByte = 0xBF;
     cmdByte = reverse_bits(cmdByte);
@@ -235,45 +235,45 @@ DS1302RTC::DateTime DS1302RTC::get_date_time() {
         readValue[i] = reverse_bits(readValue[i]);
     }
 
-    DateTime dateTime = DateTime();
+    DateTime dateTime;
 
-    dateTime.seconds = decode_seconds(readValue[0]);
-    dateTime.minutes = decode_minutes(readValue[1]);
-    dateTime.hours = decode_hours(readValue[2]);
-    dateTime.date = decode_date(readValue[3]);
-    dateTime.month = decode_date(readValue[4]);
-    dateTime.weekDay = (DS1302RTC::WeekDay) decode_weekday(readValue[5]);
-    dateTime.year = decode_year(readValue[6]);
+    dateTime.seconds = decodeSeconds(readValue[0]);
+    dateTime.minutes = decodeMinutes(readValue[1]);
+    dateTime.hours = decodeHours(readValue[2]);
+    dateTime.date = decodeDate(readValue[3]);
+    dateTime.month = decodeDate(readValue[4]);
+    dateTime.weekDay = (WeekDay) decodeWeekday(readValue[5]);
+    dateTime.year = decodeYear(readValue[6]);
 
     return dateTime;
 }
 
-void DS1302RTC::set_running(bool running) {
-    const uint8_t rawSeconds = read_register(REG_SECONDS);
+void rtcSetRunning(bool running) {
+    const uint8_t rawSeconds = readRegister(REG_SECONDS);
     // get original seconds, we will only change the 0th bit
     const uint8_t value = set_bits(rawSeconds, 0, 0, !running);
     // 0 if running, 1 if halted at the 0th bit
-    write_register(REG_SECONDS, value);
+    writeRegister(REG_SECONDS, value);
 }
 
-void DS1302RTC::set_writable(bool writable) {
+void rtcSetWritable(bool writable) {
     const uint8_t value = set_bits(0x00, 0, 0, !writable);
     // 0 if writable, 1 if write protected at 0th bit
-    write_register(REG_WRITE_PROTECT, value);
+    writeRegister(REG_WRITE_PROTECT, value);
 }
 
-void DS1302RTC::set_baud_rate(uint baudrate) {
+void rtcSetBaudRate(uint baudrate) {
     spi_set_baudrate(RTC_SPI, baudrate);
 }
 
-void DS1302RTC::set_seconds(uint8_t seconds) {
+void rtcSetSeconds(uint8_t seconds) {
     if (seconds < 0 || seconds > 59) seconds = 0;
     // if user gave seconds out of range, set it to 0
 
     const uint8_t secondsTens = seconds / 10;
     const uint8_t secondsUnits = seconds % 10;
 
-    const uint8_t rawSeconds = read_register(REG_SECONDS);
+    const uint8_t rawSeconds = readRegister(REG_SECONDS);
     // get original seconds, we will change all but the 0th bit which is the Clock Halt flag
 
     uint8_t value = set_bits(rawSeconds, 1, 3, secondsTens);
@@ -282,10 +282,10 @@ void DS1302RTC::set_seconds(uint8_t seconds) {
     value = set_bits(value, 4, 7, secondsUnits);
     // bits 4-7 are the seconds units part
 
-    write_register(REG_SECONDS, value);
+    writeRegister(REG_SECONDS, value);
 }
 
-void DS1302RTC::set_minutes(uint8_t minutes) {
+void rtcSetMinutes(uint8_t minutes) {
     if (minutes < 0 || minutes > 59) minutes = 0;
     // if user gave minutes out of range, set it to 0
 
@@ -298,10 +298,10 @@ void DS1302RTC::set_minutes(uint8_t minutes) {
     value = set_bits(value, 4, 7, minutesUnits);
     // bits 4-7 are the minutes units part
 
-    write_register(REG_MINUTES, value);
+    writeRegister(REG_MINUTES, value);
 }
 
-void DS1302RTC::set_hours(uint8_t hours) {
+void rtcSetHours(uint8_t hours) {
     if (hours < 0 || hours > 23) hours = 0;
     // if user gave hours out of range, set it to 0
 
@@ -317,10 +317,10 @@ void DS1302RTC::set_hours(uint8_t hours) {
     value = set_bits(value, 4, 7, hoursUnits);
     // bits 4-7 are the hours units part
 
-    write_register(REG_HOURS, value);
+    writeRegister(REG_HOURS, value);
 }
 
-void DS1302RTC::set_date(uint8_t date) {
+void rtcSetDate(uint8_t date) {
     if (date < 1 || date > 31) date = 1;
     // if user gave date out of range, set it to 1
 
@@ -333,10 +333,10 @@ void DS1302RTC::set_date(uint8_t date) {
     value = set_bits(value, 4, 7, dateUnits);
     // bits 4-7 are the date units part
 
-    write_register(REG_DATE, value);
+    writeRegister(REG_DATE, value);
 }
 
-void DS1302RTC::set_month(uint8_t month) {
+void rtcSetMonth(uint8_t month) {
     if (month < 1 || month > 12) month = 1;
     // if user gave month out of range, set it to 1
 
@@ -349,20 +349,20 @@ void DS1302RTC::set_month(uint8_t month) {
     value = set_bits(value, 4, 7, monthUnits);
     // bits 4-7 are the month units part
 
-    write_register(REG_MONTH, value);
+    writeRegister(REG_MONTH, value);
 }
 
-void DS1302RTC::set_weekday(WeekDay weekday) {
+void rtcSetWeekday(WeekDay weekday) {
     if (weekday < 1 || weekday > 7) weekday = MONDAY;
     // if user gave weekday out of range, set it to Monday (1)
 
     uint8_t value = set_bits(0, 5, 7, weekday);
     // bits 5-7 are the weekday units
 
-    write_register(REG_WEEKDAY, value);
+    writeRegister(REG_WEEKDAY, value);
 }
 
-void DS1302RTC::set_year(uint8_t year) {
+void rtcSetYear(uint8_t year) {
     if (year < 0 || year > 99) year = 0;
     // if user gave year out of range, set it to 0
 
@@ -375,5 +375,5 @@ void DS1302RTC::set_year(uint8_t year) {
     value = set_bits(value, 4, 7, yearUnits);
     // bits 4-7 are the year units part
 
-    write_register(REG_YEAR, value);
+    writeRegister(REG_YEAR, value);
 }

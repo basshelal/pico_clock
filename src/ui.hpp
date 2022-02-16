@@ -60,37 +60,37 @@ private:
     Rect bottomRightButtonRect = Rect(WIDTH - (4 * charWidth * buttonTextScale), 4 * (HEIGHT / 6),
                                       4 * charWidth * buttonTextScale, 2 * charHeight * buttonTextScale);
 
-    void clear_all();
+    void clearAll();
 
-    void set_rect(const Rect &rect, Pen color);
+    void setRect(const Rect &rect, Pen color);
 
-    void clear_rect(const Rect &rect);
+    void clearRect(const Rect &rect);
 
-    uint8_t get_char_width(const char c);
+    uint8_t getCharWidth(const char c);
 
-    int get_string_width(const char *string);
+    int getStringWidth(const char *string);
 
 public:
 
     void init();
 
-    void show_battery_percentage(const char *text);
+    void showBatteryPercentage(const char *text);
 
-    void show_clock(const char *text);
+    void showClock(const char *text);
 
-    void show_date(const char *text);
+    void showDate(const char *text);
 
-    void show_message(const char *text);
+    void showMessage(const char *text);
 
-    void show_top_left_button(const char *text);
+    void showTopLeftButton(const char *text);
 
-    void show_bottom_left_button(const char *text);
+    void showBottomLeftButton(const char *text);
 
-    void show_top_right_button(const char *text);
+    void showTopRightButton(const char *text);
 
-    void show_bottom_right_button(const char *text);
+    void showBottomRightButton(const char *text);
 
-    void set_brightness(const uint8_t percentage);
+    void setBrightness(const uint8_t percentage);
 
     void update();
 
