@@ -19,9 +19,9 @@ typedef void (*ButtonHeldCallback)(const Button button, const int cyclesHeld, co
 
 void buttonHandlerInit();
 
-void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCallback callback);
+void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCallback *const callback);
 
-void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback callback);
+void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback *const callback);
 
 void buttonHandlerLoop();
 

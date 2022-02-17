@@ -11,10 +11,21 @@
 #include "ui.h"
 
 // Global state variables
+static uint64_t cyclesPassed;
 static DateTime currentDateTime;
 static char timeTextBuffer[9]; // 8 chars in HH:MM:SS format + 1 for string NULL terminator
 static char dateTextBuffer[14]; // 13 chars in DOW DD-MMM-YY + 1 for string NULL terminator
 static char batteryTextBuffer[64];
+
+static ButtonChangedCallback buttonCallbackA;
+static ButtonChangedCallback buttonCallbackB;
+static ButtonChangedCallback buttonCallbackX;
+static ButtonChangedCallback buttonCallbackY;
+
+static ButtonHeldCallback buttonHeldCallbackA;
+static ButtonHeldCallback buttonHeldCallbackB;
+static ButtonHeldCallback buttonHeldCallbackX;
+static ButtonHeldCallback buttonHeldCallbackY;
 
 // On light pin, useful to check if we are on
 static void onLight() {
@@ -70,38 +81,36 @@ static void launchUICore() {
     }
 }
 
-//static ButtonChangedCallback *buttonBCallback;
-//
-//static void showB(const Button button, const bool buttonOn) {
-//    if (buttonOn) uiShowBottomLeftButton("B");
-//    else uiShowBottomLeftButton(NULL);
-//    requestUpdateToUICore();
-//}
-//
-//static void showBBB(const Button button, const bool buttonOn) {
-//    if (buttonOn) uiShowBottomLeftButton("BBB");
-//    else uiShowBottomLeftButton(NULL);
-//    requestUpdateToUICore();
-//}
-
-static void buttonACallback(const Button button, const bool buttonOn) {
-    if (buttonOn) {
-        uiShowTopLeftButton("A");
-        //*buttonBCallback = showB;
-    } else {
-        uiShowTopLeftButton(NULL);
-        // *buttonBCallback = showBBB;
-    }
-    requestUpdateToUICore();
-}
-
-static void buttonBCallback(const Button button, const bool buttonOn) {
+static void showB(const Button button, const bool buttonOn) {
     if (buttonOn) uiShowBottomLeftButton("B");
     else uiShowBottomLeftButton(NULL);
     requestUpdateToUICore();
 }
 
-static void buttonXCallback(const Button button, const bool buttonOn) {
+static void showAAA(const Button button, const int cyclesHeld, const int millisHeld) {
+    printf("%i %i\n", cyclesHeld, millisHeld);
+    if (cyclesHeld > 1) {
+        uiShowTopLeftButton("AAA");
+        requestUpdateToUICore();
+    }
+    if (cyclesHeld > 10) {
+        uiShowTopLeftButton(NULL);
+        requestUpdateToUICore();
+        buttonHeldCallbackA = NULL;
+    }
+}
+
+static void showA(const Button button, const bool buttonOn) {
+    if (buttonOn) {
+        uiShowTopLeftButton("A");
+        buttonHeldCallbackA = &showAAA;
+    } else {
+        uiShowTopLeftButton(NULL);
+    }
+    requestUpdateToUICore();
+}
+
+static void showX(const Button button, const bool buttonOn) {
     if (buttonOn) {
         uiShowTopRightButton("X");
     } else {
@@ -110,7 +119,7 @@ static void buttonXCallback(const Button button, const bool buttonOn) {
     requestUpdateToUICore();
 }
 
-static void buttonYCallback(const Button button, const bool buttonOn) {
+static void showY(const Button button, const bool buttonOn) {
     if (buttonOn) {
         uiShowBottomRightButton("Y");
     } else {
@@ -119,13 +128,6 @@ static void buttonYCallback(const Button button, const bool buttonOn) {
     requestUpdateToUICore();
 }
 
-static void buttonAHeldCallback(const Button button, const int cyclesHeld, const int millisHeld) {
-    printf("%i %i\n", cyclesHeld, millisHeld);
-    if (cyclesHeld > 1) {
-        uiShowTopLeftButton("AAA");
-        requestUpdateToUICore();
-    }
-}
 
 static void setup() {
     set_sys_clock_48mhz(); // as low as we can reliably go, we do this to save power
@@ -139,12 +141,16 @@ static void setup() {
     onLight();
 
     buttonHandlerInit();
-    buttonHandlerSetChangedCallback(A, buttonACallback);
-    buttonHandlerSetChangedCallback(B, buttonBCallback);
-    buttonHandlerSetChangedCallback(X, buttonXCallback);
-    buttonHandlerSetChangedCallback(Y, buttonYCallback);
 
-    buttonHandlerSetHeldCallback(A, buttonAHeldCallback);
+    buttonCallbackA = &showA;
+    buttonHeldCallbackA = &showAAA;
+
+    buttonHandlerSetChangedCallback(A, &buttonCallbackA);
+    buttonHandlerSetChangedCallback(B, &buttonCallbackB);
+    buttonHandlerSetChangedCallback(X, &buttonCallbackX);
+    buttonHandlerSetChangedCallback(Y, &buttonCallbackY);
+
+    buttonHandlerSetHeldCallback(A, &buttonHeldCallbackA);
 
     rtcInit();
     rtcSetWritable(true);
@@ -152,7 +158,7 @@ static void setup() {
 
     batteryInit();
 
-    multicore_launch_core1(launchUICore);
+    multicore_launch_core1(&launchUICore);
 }
 
 static void loop() {
@@ -169,5 +175,6 @@ int main() {
     while (true) {
         loop();
         sleep_ms(MAIN_CORE_CYCLE);
+        cyclesPassed++;
     }
 }

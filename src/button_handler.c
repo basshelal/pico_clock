@@ -4,8 +4,8 @@ static struct ButtonState {
     const Button button;
     bool isOn;
     int millisHeld;
-    ButtonChangedCallback changedCallback;
-    ButtonHeldCallback heldCallback;
+    ButtonChangedCallback *changedCallback;
+    ButtonHeldCallback *heldCallback;
 } ButtonState;
 
 static struct ButtonState stateA = {.button = A_BUTTON_PIN};
@@ -15,7 +15,9 @@ static struct ButtonState stateY = {.button = Y_BUTTON_PIN};
 
 static inline void handleStateChanged(struct ButtonState *const state) {
     state->isOn = !gpio_get(state->button);
-    if (state->changedCallback) state->changedCallback(state->button, state->isOn);
+    if (state->changedCallback && (*state->changedCallback)) {
+        (*state->changedCallback)(state->button, state->isOn);
+    }
 }
 
 static void handleCallback(uint gpio, uint32_t event) {
@@ -64,7 +66,7 @@ void buttonHandlerInit() {
     stateY.millisHeld = -MAIN_CORE_CYCLE;
 }
 
-void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCallback callback) {
+void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCallback *const callback) {
     switch (button) {
         case A:
             stateA.changedCallback = callback;
@@ -81,7 +83,7 @@ void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCal
     }
 }
 
-void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback callback) {
+void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback *const callback) {
     switch (button) {
         case A:
             stateA.heldCallback = callback;
@@ -101,8 +103,8 @@ void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback 
 static inline void handleHeld(struct ButtonState *const state) {
     if (state->isOn) {
         state->millisHeld += MAIN_CORE_CYCLE;
-        if (state->millisHeld > 0 && state->heldCallback) {
-            state->heldCallback(state->button, state->millisHeld / MAIN_CORE_CYCLE, state->millisHeld);
+        if (state->millisHeld > 0 && state->heldCallback && (*state->heldCallback)) {
+            (*state->heldCallback)(state->button, state->millisHeld / MAIN_CORE_CYCLE, state->millisHeld);
         }
     } else {
         state->millisHeld = -MAIN_CORE_CYCLE;
