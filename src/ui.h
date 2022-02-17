@@ -5,7 +5,7 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 #include "display.h"
-#include "utils.hpp"
+#include "utils.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -10,15 +10,20 @@
 extern "C" {
 #endif
 
-typedef void (*ButtonCallback)(bool buttonOn);
-
 typedef enum {
     A, B, X, Y
 } Button;
 
+typedef void (*ButtonChangedCallback)(const Button button, const bool buttonOn);
+typedef void (*ButtonHeldCallback)(const Button button, const int cyclesHeld, const int millisHeld);
+
 void buttonHandlerInit();
 
-void buttonHandlerSetCallback(const Button button, const ButtonCallback callback);
+void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCallback callback);
+
+void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback callback);
+
+void buttonHandlerLoop();
 
 #ifdef __cplusplus
 }

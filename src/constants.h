@@ -32,4 +32,10 @@
 #define Y_BUTTON_PIN 3
 #define SCREEN_LED_PIN 4
 
+// Core sleep time (cycle)
+#define MAIN_CORE_CYCLE (1000 / 4)
+#define UI_CORE_CYCLE (1000 / 30)
+
+#define REQUEST_UPDATE 1
+
 #endif //PICO_CLOCK_CONSTANTS_H

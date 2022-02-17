@@ -1,29 +1,20 @@
-#ifndef PICO_CLOCK_UTILS_HPP
-#define PICO_CLOCK_UTILS_HPP
+#ifndef PICO_CLOCK_UTILS_H
+#define PICO_CLOCK_UTILS_H
 
 #include "constants.h"
 #include "pico/stdlib.h"
 #include <string.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(DEBUG) && DEBUG > 0
 #define log(fmt, args...) printf(fmt, ##args)
 #else
 #define log(fmt, args...) /* Don't do anything in release builds */
 #endif
-
-static const char charLookup[96] = {
-        ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')',
-        '*', '+', ',', '-', '.', '/', '0', '1', '2', '3',
-        '4', '5', '6', '7', '8', '9', ':', ';', '<', '=',
-        '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F',
-        'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[',
-        '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e',
-        'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-        'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
-        'z', '{', '|', '}', '~', 0
-};
 
 /**
  * Clears the console
@@ -40,15 +31,7 @@ inline void clear_console() {
  * @param x the byte to convert
  * @return a string with the binary representation of x
  */
-inline const char *byte_to_binary(const uint8_t x) {
-    static char b[9];
-    b[0] = '\0';
-    int z;
-    for (z = 128; z > 0; z >>= 1) {
-        strcat(b, ((x & z) == z) ? "1" : "0");
-    }
-    return b;
-}
+const char *byte_to_binary(const uint8_t x);
 
 /**
  * Reverses the bits in the number n, used to convert between least-significant-bit first and most-significant-bit first
@@ -148,11 +131,10 @@ inline uint8_t set_bits(const uint8_t value, const uint8_t fromBit, const uint8_
     return result;
 }
 
-inline uint8_t get_font_index_for_char(const char c) {
-    for (int i = 0; i < 96; ++i) {
-        if (c == charLookup[i]) return i;
-    }
-    return 96 - 1;
-}
+uint8_t get_font_index_for_char(const char c);
 
-#endif //PICO_CLOCK_UTILS_HPP
+#ifdef __cplusplus
+}
+#endif
+
+#endif //PICO_CLOCK_UTILS_H

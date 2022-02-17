@@ -16,16 +16,16 @@ set(CMAKE_CXX_STANDARD 17)
 pico_sdk_init()
 
 add_executable(${NAME}
-        src/main.cpp
+        src/main.c
         src/constants.h
         src/rtc.h src/rtc.c
         src/battery.h src/battery.c
-        src/utils.hpp src/utils.cpp
+        src/utils.h src/utils.c
         src/display.cpp src/display.h
         src/ui.h src/ui.c
         src/button_handler.h src/button_handler.c
         src/custom_font.hpp
-        src/power_manager.h src/power_manager.c)
+        )
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)

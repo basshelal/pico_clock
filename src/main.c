@@ -4,12 +4,11 @@
 #include <stdio.h>
 
 #include "constants.h"
-#include "utils.hpp"
+#include "utils.h"
 #include "rtc.h"
 #include "battery.h"
 #include "button_handler.h"
 #include "ui.h"
-#include "power_manager.h"
 
 // Global state variables
 static DateTime currentDateTime;
@@ -25,7 +24,7 @@ static void onLight() {
 }
 
 static void requestUpdateToUICore() {
-    multicore_fifo_push_blocking(true);
+    multicore_fifo_push_timeout_us(REQUEST_UPDATE, 5000);
 }
 
 static void updateUI() {
@@ -54,8 +53,9 @@ static void updateUI() {
 static void loopUICore() {
     int updateRequestCount = 0;
     while (multicore_fifo_rvalid()) {
-        bool isDirty = multicore_fifo_pop_blocking();
-        if (isDirty) updateRequestCount++;
+        uint32_t data;
+        multicore_fifo_pop_timeout_us(10000, &data);
+        if (data == REQUEST_UPDATE) updateRequestCount++;
     }
     if (updateRequestCount > 0) {
         uiUpdate();
@@ -66,37 +66,69 @@ static void loopUICore() {
 static void launchUICore() {
     while (true) {
         loopUICore();
-        sleep_ms(1000 / 30);
+        sleep_ms(UI_CORE_CYCLE);
     }
 }
 
-static void buttonACallback(bool buttonOn) {
-    if (buttonOn) uiShowTopLeftButton("A");
-    else uiShowTopLeftButton(NULL);
+//static ButtonChangedCallback *buttonBCallback;
+//
+//static void showB(const Button button, const bool buttonOn) {
+//    if (buttonOn) uiShowBottomLeftButton("B");
+//    else uiShowBottomLeftButton(NULL);
+//    requestUpdateToUICore();
+//}
+//
+//static void showBBB(const Button button, const bool buttonOn) {
+//    if (buttonOn) uiShowBottomLeftButton("BBB");
+//    else uiShowBottomLeftButton(NULL);
+//    requestUpdateToUICore();
+//}
+
+static void buttonACallback(const Button button, const bool buttonOn) {
+    if (buttonOn) {
+        uiShowTopLeftButton("A");
+        //*buttonBCallback = showB;
+    } else {
+        uiShowTopLeftButton(NULL);
+        // *buttonBCallback = showBBB;
+    }
     requestUpdateToUICore();
 }
 
-static void buttonBCallback(bool buttonOn) {
+static void buttonBCallback(const Button button, const bool buttonOn) {
     if (buttonOn) uiShowBottomLeftButton("B");
     else uiShowBottomLeftButton(NULL);
     requestUpdateToUICore();
 }
 
-static void buttonXCallback(bool buttonOn) {
-    if (buttonOn) uiShowTopRightButton("X");
-    else uiShowTopRightButton(NULL);
+static void buttonXCallback(const Button button, const bool buttonOn) {
+    if (buttonOn) {
+        uiShowTopRightButton("X");
+    } else {
+        uiShowTopRightButton(NULL);
+    }
     requestUpdateToUICore();
 }
 
-static void buttonYCallback(bool buttonOn) {
-    if (buttonOn) uiShowBottomRightButton("Y");
-    else uiShowBottomRightButton(NULL);
+static void buttonYCallback(const Button button, const bool buttonOn) {
+    if (buttonOn) {
+        uiShowBottomRightButton("Y");
+    } else {
+        uiShowBottomRightButton(NULL);
+    }
     requestUpdateToUICore();
+}
+
+static void buttonAHeldCallback(const Button button, const int cyclesHeld, const int millisHeld) {
+    printf("%i %i\n", cyclesHeld, millisHeld);
+    if (cyclesHeld > 1) {
+        uiShowTopLeftButton("AAA");
+        requestUpdateToUICore();
+    }
 }
 
 static void setup() {
     set_sys_clock_48mhz(); // as low as we can reliably go, we do this to save power
-    powerManagerInit();
 
     uiInit(); // first because we will override some gpio pins the screen uses
 
@@ -107,10 +139,12 @@ static void setup() {
     onLight();
 
     buttonHandlerInit();
-    buttonHandlerSetCallback(A, buttonACallback);
-    buttonHandlerSetCallback(B, buttonBCallback);
-    buttonHandlerSetCallback(X, buttonXCallback);
-    buttonHandlerSetCallback(Y, buttonYCallback);
+    buttonHandlerSetChangedCallback(A, buttonACallback);
+    buttonHandlerSetChangedCallback(B, buttonBCallback);
+    buttonHandlerSetChangedCallback(X, buttonXCallback);
+    buttonHandlerSetChangedCallback(Y, buttonYCallback);
+
+    buttonHandlerSetHeldCallback(A, buttonAHeldCallback);
 
     rtcInit();
     rtcSetWritable(true);
@@ -127,12 +161,13 @@ static void loop() {
         currentDateTime = dateTime;
         updateUI();
     }
+    buttonHandlerLoop();
 }
 
 int main() {
     setup();
     while (true) {
         loop();
-        sleep_ms(1000 / 4);
+        sleep_ms(MAIN_CORE_CYCLE);
     }
 }

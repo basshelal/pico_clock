@@ -2,7 +2,7 @@
 #include "pico_graphics.hpp"
 #include "pico_display_2.hpp"
 #include "custom_font.hpp"
-#include "utils.hpp"
+#include "utils.h"
 
 using namespace pimoroni;
 

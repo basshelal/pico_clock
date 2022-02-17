@@ -2,19 +2,19 @@
 
 static Color color(uint8_t r, uint8_t g, uint8_t b) { return (Color) {.r=r, .g=g, .b = b}; }
 
-static Color WHITE = (Color) {.r = 255, .g = 255, .b = 255};
-static Color BLACK = (Color) {.r = 0, .g = 0, .b = 0};
-static Color GREY = (Color) {.r = 127, .g = 127, .b = 127};
-static Color RED = (Color) {.r = 255, .g = 0, .b = 0};
-static Color GREEN = (Color) {.r = 0, .g = 255, .b = 0};
-static Color BLUE = (Color) {.r = 0, .g = 0, .b = 255};
-static Color YELLOW = (Color) {.r = 255, .g = 255, .b = 0};
-static Color CYAN = (Color) {.r = 0, .g = 255, .b = 255};
-static Color MAGENTA = (Color) {.r = 255, .g = 0, .b = 255};
-static Color PINK = (Color) {.r = 255, .g = 0, .b = 127};
-static Color LIME = (Color) {.r = 127, .g = 255, .b = 0};
-static Color VIOLET = (Color) {.r = 127, .g = 0, .b = 255};
-static Color ORANGE = (Color) {.r = 255, .g = 127, .b = 0};
+static Color WHITE = {.r = 255, .g = 255, .b = 255};
+static Color BLACK = {.r = 0, .g = 0, .b = 0};
+static Color GREY = {.r = 127, .g = 127, .b = 127};
+static Color RED = {.r = 255, .g = 0, .b = 0};
+static Color GREEN = {.r = 0, .g = 255, .b = 0};
+static Color BLUE = {.r = 0, .g = 0, .b = 255};
+static Color YELLOW = {.r = 255, .g = 255, .b = 0};
+static Color CYAN = {.r = 0, .g = 255, .b = 255};
+static Color MAGENTA = {.r = 255, .g = 0, .b = 255};
+static Color PINK = {.r = 255, .g = 0, .b = 127};
+static Color LIME = {.r = 127, .g = 255, .b = 0};
+static Color VIOLET = {.r = 127, .g = 0, .b = 255};
+static Color ORANGE = {.r = 255, .g = 127, .b = 0};
 
 static uint16_t *buffer;
 

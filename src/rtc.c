@@ -3,7 +3,7 @@
 
 #include "rtc.h"
 #include "constants.h"
-#include "utils.hpp"
+#include "utils.h"
 
 /*
  * Much of the ideas and fundamental issues were inspired by this:
@@ -19,6 +19,88 @@
 #define REG_YEAR 6
 #define REG_WRITE_PROTECT 7
 #define REG_TRICKLE_CHARGE 8
+
+inline bool dateTimeEquals(DateTime a, DateTime b) {
+    return a.seconds == b.seconds &&
+           a.minutes == b.minutes &&
+           a.hours == b.hours &&
+           a.weekDay == b.weekDay &&
+           a.date == b.date &&
+           a.month == b.month &&
+           a.year == b.year;
+}
+
+inline const char *weekdayToString(WeekDay weekDay) {
+    const char *string;
+    switch (weekDay) {
+        case MONDAY:
+            string = "Mon";
+            break;
+        case TUESDAY:
+            string = "Tue";
+            break;
+        case WEDNESDAY:
+            string = "Wed";
+            break;
+        case THURSDAY:
+            string = "Thu";
+            break;
+        case FRIDAY:
+            string = "Fri";
+            break;
+        case SATURDAY:
+            string = "Sat";
+            break;
+        case SUNDAY:
+            string = "Sun";
+            break;
+    }
+    return string;
+}
+
+inline const char *monthToString(uint8_t month) {
+    if (month < 1 || month > 12) month = 1;
+    const char *string;
+    switch (month) {
+        case 1:
+            string = "Jan";
+            break;
+        case 2:
+            string = "Feb";
+            break;
+        case 3:
+            string = "Mar";
+            break;
+        case 4:
+            string = "Apr";
+            break;
+        case 5:
+            string = "May";
+            break;
+        case 6:
+            string = "Jun";
+            break;
+        case 7:
+            string = "Jul";
+            break;
+        case 8:
+            string = "Aug";
+            break;
+        case 9:
+            string = "Sep";
+            break;
+        case 10:
+            string = "Oct";
+            break;
+        case 11:
+            string = "Nov";
+            break;
+        case 12:
+            string = "Dec";
+            break;
+    }
+    return string;
+}
 
 static uint8_t readRegister(uint8_t reg) {
     // The DS1302 is least-significant-bit first which the pico doesn't support, so we have to reverse the bits
