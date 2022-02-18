@@ -20,89 +20,72 @@
 #define REG_WRITE_PROTECT 7
 #define REG_TRICKLE_CHARGE 8
 
-inline bool dateTimeEquals(DateTime a, DateTime b) {
-    return a.seconds == b.seconds &&
-           a.minutes == b.minutes &&
-           a.hours == b.hours &&
-           a.weekDay == b.weekDay &&
-           a.date == b.date &&
-           a.month == b.month &&
-           a.year == b.year;
+inline bool dateTimeEquals(const DateTime *a, const DateTime *b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a->seconds == b->seconds &&
+           a->minutes == b->minutes &&
+           a->hours == b->hours &&
+           a->weekDay == b->weekDay &&
+           a->date == b->date &&
+           a->month == b->month &&
+           a->year == b->year;
 }
 
-inline const char *weekdayToString(WeekDay weekDay) {
-    const char *string;
+inline const char *weekdayToString(const WeekDay weekDay) {
     switch (weekDay) {
         case MONDAY:
-            string = "Mon";
-            break;
+            return "Mon";
         case TUESDAY:
-            string = "Tue";
-            break;
+            return "Tue";
         case WEDNESDAY:
-            string = "Wed";
-            break;
+            return "Wed";
         case THURSDAY:
-            string = "Thu";
-            break;
+            return "Thu";
         case FRIDAY:
-            string = "Fri";
-            break;
+            return "Fri";
         case SATURDAY:
-            string = "Sat";
-            break;
+            return "Sat";
         case SUNDAY:
-            string = "Sun";
-            break;
+            return "Sun";
+        default:
+            return "Mon";
     }
-    return string;
 }
 
-inline const char *monthToString(uint8_t month) {
-    if (month < 1 || month > 12) month = 1;
-    const char *string;
-    switch (month) {
+inline const char *monthToString(const uint8_t month) {
+    const uint8_t clampedMonth = (month < 1 || month > 12) ? 1 : month;
+    switch (clampedMonth) {
         case 1:
-            string = "Jan";
-            break;
+            return "Jan";
         case 2:
-            string = "Feb";
-            break;
+            return "Feb";
         case 3:
-            string = "Mar";
-            break;
+            return "Mar";
         case 4:
-            string = "Apr";
-            break;
+            return "Apr";
         case 5:
-            string = "May";
-            break;
+            return "May";
         case 6:
-            string = "Jun";
-            break;
+            return "Jun";
         case 7:
-            string = "Jul";
-            break;
+            return "Jul";
         case 8:
-            string = "Aug";
-            break;
+            return "Aug";
         case 9:
-            string = "Sep";
-            break;
+            return "Sep";
         case 10:
-            string = "Oct";
-            break;
+            return "Oct";
         case 11:
-            string = "Nov";
-            break;
+            return "Nov";
         case 12:
-            string = "Dec";
-            break;
+            return "Dec";
+        default:
+            return "Jan";
     }
-    return string;
 }
 
-static uint8_t readRegister(uint8_t reg) {
+static uint8_t readRegister(const uint8_t reg) {
     // The DS1302 is least-significant-bit first which the pico doesn't support, so we have to reverse the bits
     // between spi calls to both read and write
 
@@ -122,16 +105,16 @@ static uint8_t readRegister(uint8_t reg) {
     return result;
 }
 
-static void writeRegister(uint8_t reg, uint8_t value) {
+static void writeRegister(const uint8_t reg, const uint8_t value) {
     uint8_t cmdByte = 0x80; // 10000000 first bit is mandatory for communication, last bit signifies read 0 means write
     cmdByte |= (reg << 1);
 
     cmdByte = reverse_bits(cmdByte);
-    value = reverse_bits(value);
+    const uint8_t reversedValue = reverse_bits(value);
 
     gpio_put(RTC_CS_PIN, 1);
     spi_write_blocking(RTC_SPI, &cmdByte, 1);
-    spi_write_blocking(RTC_SPI, &value, 1);
+    spi_write_blocking(RTC_SPI, &reversedValue, 1);
     gpio_put(RTC_CS_PIN, 0);
 }
 
@@ -164,7 +147,7 @@ bool rtcIsWritable() {
     return !isProtected;
 }
 
-uint rtcGetBaudRate() {
+uint32_t rtcGetBaudRate() {
     return spi_get_baudrate(RTC_SPI);
 }
 
@@ -301,7 +284,8 @@ uint8_t rtcGetYear() {
     return decodeYear(rawYear);
 }
 
-DateTime rtcGetDateTime() {
+void rtcGetDateTime(DateTime *const result) {
+    if (!result) return;
     // Burst read mode
     uint8_t cmdByte = 0xBF;
     cmdByte = reverse_bits(cmdByte);
@@ -313,24 +297,20 @@ DateTime rtcGetDateTime() {
     spi_read_blocking(RTC_SPI, 0, readValue, 8);
     gpio_put(RTC_CS_PIN, 0);
 
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < sizeof(readValue); ++i) {
         readValue[i] = reverse_bits(readValue[i]);
     }
 
-    DateTime dateTime;
-
-    dateTime.seconds = decodeSeconds(readValue[0]);
-    dateTime.minutes = decodeMinutes(readValue[1]);
-    dateTime.hours = decodeHours(readValue[2]);
-    dateTime.date = decodeDate(readValue[3]);
-    dateTime.month = decodeDate(readValue[4]);
-    dateTime.weekDay = (WeekDay) decodeWeekday(readValue[5]);
-    dateTime.year = decodeYear(readValue[6]);
-
-    return dateTime;
+    result->seconds = decodeSeconds(readValue[0]);
+    result->minutes = decodeMinutes(readValue[1]);
+    result->hours = decodeHours(readValue[2]);
+    result->date = decodeDate(readValue[3]);
+    result->month = decodeDate(readValue[4]);
+    result->weekDay = (WeekDay) decodeWeekday(readValue[5]);
+    result->year = decodeYear(readValue[6]);
 }
 
-void rtcSetRunning(bool running) {
+void rtcSetRunning(const bool running) {
     const uint8_t rawSeconds = readRegister(REG_SECONDS);
     // get original seconds, we will only change the 0th bit
     const uint8_t value = set_bits(rawSeconds, 0, 0, !running);
@@ -338,22 +318,22 @@ void rtcSetRunning(bool running) {
     writeRegister(REG_SECONDS, value);
 }
 
-void rtcSetWritable(bool writable) {
+void rtcSetWritable(const bool writable) {
     const uint8_t value = set_bits(0x00, 0, 0, !writable);
     // 0 if writable, 1 if write protected at 0th bit
     writeRegister(REG_WRITE_PROTECT, value);
 }
 
-void rtcSetBaudRate(uint baudrate) {
+void rtcSetBaudRate(const uint32_t baudrate) {
     spi_set_baudrate(RTC_SPI, baudrate);
 }
 
-void rtcSetSeconds(uint8_t seconds) {
-    if (seconds < 0 || seconds > 59) seconds = 0;
+void rtcSetSeconds(const uint8_t seconds) {
+    const uint8_t clampedSeconds = (seconds < 0 || seconds > 59) ? 0 : seconds;
     // if user gave seconds out of range, set it to 0
 
-    const uint8_t secondsTens = seconds / 10;
-    const uint8_t secondsUnits = seconds % 10;
+    const uint8_t secondsTens = clampedSeconds / 10;
+    const uint8_t secondsUnits = clampedSeconds % 10;
 
     const uint8_t rawSeconds = readRegister(REG_SECONDS);
     // get original seconds, we will change all but the 0th bit which is the Clock Halt flag
@@ -367,12 +347,12 @@ void rtcSetSeconds(uint8_t seconds) {
     writeRegister(REG_SECONDS, value);
 }
 
-void rtcSetMinutes(uint8_t minutes) {
-    if (minutes < 0 || minutes > 59) minutes = 0;
+void rtcSetMinutes(const uint8_t minutes) {
+    const uint8_t clampedMinutes = (minutes < 0 || minutes > 59) ? 0 : minutes;
     // if user gave minutes out of range, set it to 0
 
-    const uint8_t minutesTens = minutes / 10;
-    const uint8_t minutesUnits = minutes % 10;
+    const uint8_t minutesTens = clampedMinutes / 10;
+    const uint8_t minutesUnits = clampedMinutes % 10;
 
     uint8_t value = set_bits(0, 1, 3, minutesTens);
     // bits 1-3 are the minutes tens part
@@ -383,12 +363,12 @@ void rtcSetMinutes(uint8_t minutes) {
     writeRegister(REG_MINUTES, value);
 }
 
-void rtcSetHours(uint8_t hours) {
-    if (hours < 0 || hours > 23) hours = 0;
+void rtcSetHours(const uint8_t hours) {
+    const uint8_t clampedHours = (hours < 0 || hours > 23) ? 0 : hours;
     // if user gave hours out of range, set it to 0
 
-    const uint8_t hoursTens = hours / 10;
-    const uint8_t hoursUnits = hours % 10;
+    const uint8_t hoursTens = clampedHours / 10;
+    const uint8_t hoursUnits = clampedHours % 10;
 
     uint8_t value = 0;
     // 0th bit is 12/24 mode, 1 if 12hr mode, 0 if 24hr mode, we always use 24hr mode
@@ -402,12 +382,12 @@ void rtcSetHours(uint8_t hours) {
     writeRegister(REG_HOURS, value);
 }
 
-void rtcSetDate(uint8_t date) {
-    if (date < 1 || date > 31) date = 1;
+void rtcSetDate(const uint8_t date) {
+    const uint8_t clampedDate = (date < 1 || date > 31) ? 1 : date;
     // if user gave date out of range, set it to 1
 
-    const uint8_t dateTens = date / 10;
-    const uint8_t dateUnits = date % 10;
+    const uint8_t dateTens = clampedDate / 10;
+    const uint8_t dateUnits = clampedDate % 10;
 
     uint8_t value = set_bits(0, 2, 3, dateTens);
     // bits 2-3 are the date tens part
@@ -418,12 +398,12 @@ void rtcSetDate(uint8_t date) {
     writeRegister(REG_DATE, value);
 }
 
-void rtcSetMonth(uint8_t month) {
-    if (month < 1 || month > 12) month = 1;
+void rtcSetMonth(const uint8_t month) {
+    const uint8_t clampedMonth = (month < 1 || month > 12) ? 1 : month;
     // if user gave month out of range, set it to 1
 
-    const uint8_t monthTens = month / 10;
-    const uint8_t monthUnits = month % 10;
+    const uint8_t monthTens = clampedMonth / 10;
+    const uint8_t monthUnits = clampedMonth % 10;
 
     uint8_t value = set_bits(0, 3, 3, monthTens);
     // bit 3 is the month tens part
@@ -434,22 +414,22 @@ void rtcSetMonth(uint8_t month) {
     writeRegister(REG_MONTH, value);
 }
 
-void rtcSetWeekday(WeekDay weekday) {
-    if (weekday < 1 || weekday > 7) weekday = MONDAY;
+void rtcSetWeekday(const WeekDay weekday) {
+    const WeekDay clampedWeekday = (weekday < 1 || weekday > 7) ? MONDAY : weekday;
     // if user gave weekday out of range, set it to Monday (1)
 
-    uint8_t value = set_bits(0, 5, 7, weekday);
+    uint8_t value = set_bits(0, 5, 7, clampedWeekday);
     // bits 5-7 are the weekday units
 
     writeRegister(REG_WEEKDAY, value);
 }
 
-void rtcSetYear(uint8_t year) {
-    if (year < 0 || year > 99) year = 0;
+void rtcSetYear(const uint8_t year) {
+    const uint8_t clampedYear = (year < 0 || year > 99) ? 0 : year;
     // if user gave year out of range, set it to 0
 
-    const uint8_t yearTens = year / 10;
-    const uint8_t yearUnits = year % 10;
+    const uint8_t yearTens = clampedYear / 10;
+    const uint8_t yearUnits = clampedYear % 10;
 
     uint8_t value = set_bits(0, 0, 3, yearTens);
     // bits 0-3 are the year tens part

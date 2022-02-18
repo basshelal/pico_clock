@@ -26,11 +26,11 @@ typedef struct Color {
     uint8_t b;
 } Color;
 
-void displayInit(uint16_t *buffer);
+void displayInit(uint16_t *const buffer);
 
 void displayClear();
 
-void displaySetText(const char *text, int32_t x, int32_t y, int32_t wrap, uint8_t scale);
+void displaySetText(const char *text, const int32_t x, const int32_t y, const int32_t wrap, const uint8_t scale);
 
 void displayUpdate();
 

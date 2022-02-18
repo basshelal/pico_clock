@@ -33,6 +33,8 @@ void uiSetBrightness(const uint8_t percentage);
 
 void uiUpdate();
 
+void uiLoop();
+
 // battery percentage at top left
 // middle large clock
 // bottom smaller full date

@@ -15,7 +15,7 @@ typedef enum {
 } Button;
 
 typedef void (*ButtonChangedCallback)(const Button button, const bool buttonOn);
-typedef void (*ButtonHeldCallback)(const Button button, const int cyclesHeld, const int millisHeld);
+typedef void (*ButtonHeldCallback)(const Button button, const uint32_t cyclesHeld, const uint64_t millisHeld);
 
 void buttonHandlerInit();
 

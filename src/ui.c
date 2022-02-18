@@ -18,10 +18,10 @@ static Color ORANGE = {.r = 255, .g = 127, .b = 0};
 
 static uint16_t *buffer;
 
-static const int outsideMargin = 10;
-static const int charWidth = 6;
-static const int charHeight = 8;
-static const int batteryTextScale = 1;
+static const uint8_t outsideMargin = 10;
+static const uint8_t charWidth = 6;
+static const uint8_t charHeight = 8;
+static const uint8_t batteryTextScale = 1;
 
 static Rectangle batteryRectangle = {
         .x=outsideMargin,
@@ -30,7 +30,7 @@ static Rectangle batteryRectangle = {
         .h=batteryTextScale * charHeight
 };
 
-static const int clockTextScale = 6;
+static const uint8_t clockTextScale = 6;
 
 static Rectangle clockRect = {
         .x=outsideMargin * clockTextScale,
@@ -39,7 +39,7 @@ static Rectangle clockRect = {
         .h=1 * charHeight * clockTextScale
 };
 
-static const int dateTextScale = 2;
+static const uint8_t dateTextScale = 2;
 
 static Rectangle dateRect = {
         .x=outsideMargin * clockTextScale,
@@ -47,7 +47,7 @@ static Rectangle dateRect = {
         .w=12 * charWidth * dateTextScale,
         .h=1 * charHeight * dateTextScale};
 
-static const int messageTextScale = 2;
+static const uint8_t messageTextScale = 2;
 
 static Rectangle messageRect = {
         .x=outsideMargin * clockTextScale,
@@ -55,34 +55,41 @@ static Rectangle messageRect = {
         .w=12 * charWidth * messageTextScale,
         .h=3 * charHeight * messageTextScale};
 
-static const int buttonTextScale = 2;
+static const uint8_t buttonTextScale = 2;
+
+static const int32_t leftX = 0;
+static const int32_t rightX = DISPLAY_WIDTH - (4 * charWidth * buttonTextScale);
+static const int32_t topY = DISPLAY_HEIGHT / 6;
+static const int32_t bottomY = 4 * (DISPLAY_HEIGHT / 6);
+static const int32_t width = 4 * charWidth * buttonTextScale;
+static const int32_t height = 2 * charHeight * buttonTextScale;
 
 static Rectangle topLeftButtonRect = {
-        .x=0,
-        .y=DISPLAY_HEIGHT / 6,
-        .w=4 * charWidth * buttonTextScale,
-        .h=2 * charHeight * buttonTextScale
+        .x=leftX,
+        .y=topY,
+        .w=width,
+        .h=height
 };
 
 static Rectangle topRightButtonRect = {
-        .x=DISPLAY_WIDTH - (4 * charWidth * buttonTextScale),
-        .y=DISPLAY_HEIGHT / 6,
-        .w=4 * charWidth * buttonTextScale,
-        .h=2 * charHeight * buttonTextScale
+        .x=rightX,
+        .y=topY,
+        .w=width,
+        .h=height
 };
 
 static Rectangle bottomLeftButtonRect = {
-        .x=0,
-        .y=4 * (DISPLAY_HEIGHT / 6),
-        .w=4 * charWidth * buttonTextScale,
-        .h=2 * charHeight * buttonTextScale
+        .x=leftX,
+        .y=bottomY,
+        .w=width,
+        .h=height
 };
 
 static Rectangle bottomRightButtonRect = {
-        .x=DISPLAY_WIDTH - (4 * charWidth * buttonTextScale),
-        .y=4 * (DISPLAY_HEIGHT / 6),
-        .w=4 * charWidth * buttonTextScale,
-        .h=2 * charHeight * buttonTextScale
+        .x=rightX,
+        .y=bottomY,
+        .w=width,
+        .h=height
 };
 
 
@@ -90,13 +97,13 @@ void uiClearAll() {
     displayClear();
 }
 
-void uiSetRectangle(const Rectangle rectangle, Color color) {
+static inline void uiSetRectangle(const Rectangle rectangle, Color color) {
     displaySetColor(color);
     displaySetRectangle(rectangle);
     displaySetColor(WHITE);
 }
 
-void uiClearRectangle(const Rectangle rectangle) {
+static inline void uiClearRectangle(const Rectangle rectangle) {
     uiSetRectangle(rectangle, BLACK);
 }
 
@@ -107,7 +114,7 @@ void uiInit() {
 }
 
 void uiShowBatteryPercentage(const char *text) {
-    uiSetRectangle(batteryRectangle, BLACK);
+    uiClearRectangle(batteryRectangle);
     if (text != NULL) {
         batteryRectangle.w = (displayGetStringWidth(text) * batteryTextScale);
         displaySetText(text, batteryRectangle.x, batteryRectangle.y,
@@ -116,7 +123,7 @@ void uiShowBatteryPercentage(const char *text) {
 }
 
 void uiShowClock(const char *text) {
-    uiSetRectangle(clockRect, BLACK);
+    uiClearRectangle(clockRect);
     if (text != NULL) {
         clockRect.w = (displayGetStringWidth(text) * clockTextScale);
         clockRect.x = (DISPLAY_WIDTH / 2) - (clockRect.w / 2);
@@ -126,7 +133,7 @@ void uiShowClock(const char *text) {
 }
 
 void uiShowDate(const char *text) {
-    uiSetRectangle(dateRect, BLACK);
+    uiClearRectangle(dateRect);
     if (text) {
         dateRect.w = (displayGetStringWidth(text) * dateTextScale);
         dateRect.x = (DISPLAY_WIDTH / 2) - (dateRect.w / 2);
@@ -136,7 +143,7 @@ void uiShowDate(const char *text) {
 }
 
 void uiShowMessage(const char *text) {
-    uiSetRectangle(messageRect, BLACK);
+    uiClearRectangle(messageRect);
     if (text != NULL) {
         const int wrapWidth = DISPLAY_WIDTH - (2 * 4 * charWidth * buttonTextScale);
         const int fullLineWidth = (displayGetStringWidth(text) * messageTextScale);
@@ -153,7 +160,7 @@ void uiShowMessage(const char *text) {
 }
 
 void uiShowTopLeftButton(const char *text) {
-    uiSetRectangle(topLeftButtonRect, BLACK);
+    uiClearRectangle(topLeftButtonRect);
     if (text != NULL) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -169,7 +176,7 @@ void uiShowTopLeftButton(const char *text) {
 }
 
 void uiShowBottomLeftButton(const char *text) {
-    uiSetRectangle(bottomLeftButtonRect, BLACK);
+    uiClearRectangle(bottomLeftButtonRect);
     if (text != NULL) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -185,7 +192,7 @@ void uiShowBottomLeftButton(const char *text) {
 }
 
 void uiShowTopRightButton(const char *text) {
-    uiSetRectangle(topRightButtonRect, BLACK);
+    uiClearRectangle(topRightButtonRect);
     if (text != NULL) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -195,13 +202,14 @@ void uiShowTopRightButton(const char *text) {
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         topRightButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
+        topRightButtonRect.x = lines <= 1 ? (DISPLAY_WIDTH - lineWidth) : rightX;
         displaySetText(text, topRightButtonRect.x, topRightButtonRect.y,
                        wrapWidth, buttonTextScale);
     }
 }
 
 void uiShowBottomRightButton(const char *text) {
-    uiSetRectangle(bottomRightButtonRect, BLACK);
+    uiClearRectangle(bottomRightButtonRect);
     if (text != NULL) {
         const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -211,6 +219,7 @@ void uiShowBottomRightButton(const char *text) {
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         bottomRightButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
+        bottomRightButtonRect.x = lines <= 1 ? (DISPLAY_WIDTH - lineWidth) : rightX;
         displaySetText(text, bottomRightButtonRect.x, bottomRightButtonRect.y,
                        wrapWidth, buttonTextScale);
     }
@@ -223,4 +232,8 @@ void uiSetBrightness(const uint8_t percentage) {
 void uiUpdate() {
     displayUpdate();
     log("UI update!\n");
+}
+
+void uiLoop() {
+
 }

@@ -25,11 +25,11 @@ typedef struct DateTime {
     uint8_t year;
 } DateTime;
 
-bool dateTimeEquals(DateTime a, DateTime b);
+bool dateTimeEquals(const DateTime *const a, const DateTime *const b);
 
-const char *weekdayToString(WeekDay weekDay);
+const char *weekdayToString(const WeekDay weekDay);
 
-const char *monthToString(uint8_t month);
+const char *monthToString(const uint8_t month);
 
 void rtcInit();
 
@@ -37,7 +37,7 @@ bool rtcIsRunning();
 
 bool rtcIsWritable();
 
-uint rtcGetBaudRate();
+uint32_t rtcGetBaudRate();
 
 uint8_t rtcGetSeconds();
 
@@ -53,27 +53,27 @@ WeekDay rtcGetWeekday();
 
 uint8_t rtcGetYear();
 
-DateTime rtcGetDateTime();
+void rtcGetDateTime(DateTime *const result);
 
-void rtcSetRunning(bool running);
+void rtcSetRunning(const bool running);
 
-void rtcSetWritable(bool writable);
+void rtcSetWritable(const bool writable);
 
-void rtcSetBaudRate(uint baudrate);
+void rtcSetBaudRate(const uint32_t baudrate);
 
-void rtcSetSeconds(uint8_t seconds);
+void rtcSetSeconds(const uint8_t seconds);
 
-void rtcSetMinutes(uint8_t minutes);
+void rtcSetMinutes(const uint8_t minutes);
 
-void rtcSetHours(uint8_t hours);
+void rtcSetHours(const uint8_t hours);
 
-void rtcSetDate(uint8_t date);
+void rtcSetDate(const uint8_t date);
 
-void rtcSetMonth(uint8_t month);
+void rtcSetMonth(const uint8_t month);
 
-void rtcSetWeekday(WeekDay weekday);
+void rtcSetWeekday(const WeekDay weekday);
 
-void rtcSetYear(uint8_t year);
+void rtcSetYear(const uint8_t year);
 
 #ifdef __cplusplus
 }

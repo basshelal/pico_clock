@@ -13,6 +13,7 @@
 // Global state variables
 static uint64_t cyclesPassed;
 static DateTime currentDateTime;
+static DateTime oldDateTime;
 static char timeTextBuffer[9]; // 8 chars in HH:MM:SS format + 1 for string NULL terminator
 static char dateTextBuffer[14]; // 13 chars in DOW DD-MMM-YY + 1 for string NULL terminator
 static char batteryTextBuffer[64];
@@ -38,7 +39,7 @@ static void requestUpdateToUICore() {
     multicore_fifo_push_timeout_us(REQUEST_UPDATE, 5000);
 }
 
-static void updateUI() {
+static void updateText() {
     sprintf(timeTextBuffer, "%02i:%02i:%02i",
             currentDateTime.hours, currentDateTime.minutes, currentDateTime.seconds);
     sprintf(dateTextBuffer, "%s %02i-%s-%02i",
@@ -87,16 +88,28 @@ static void showB(const Button button, const bool buttonOn) {
     requestUpdateToUICore();
 }
 
-static void showAAA(const Button button, const int cyclesHeld, const int millisHeld) {
-    printf("%i %i\n", cyclesHeld, millisHeld);
-    if (cyclesHeld > 1) {
+static void showAAA(const Button button, const uint32_t cyclesHeld, const uint64_t millisHeld) {
+    static uint32_t oldCyclesHeld = 16; // any number larger than 1 will do
+    static bool isNewHold;
+    if (oldCyclesHeld < cyclesHeld) { // we went out of sync, re-sync
+        oldCyclesHeld = cyclesHeld;
+        isNewHold = false;
+    } else if (oldCyclesHeld > cyclesHeld) { // this is a new hold
+        oldCyclesHeld = cyclesHeld;
+        isNewHold = true;
+    }
+    if (cyclesHeld > 1 && isNewHold) {
         uiShowTopLeftButton("AAA");
         requestUpdateToUICore();
+        isNewHold = false;
     }
-    if (cyclesHeld > 10) {
-        uiShowTopLeftButton(NULL);
+    oldCyclesHeld++;
+}
+
+static void showXXX(const Button button, const uint32_t cyclesHeld, const uint64_t millisHeld) {
+    if (cyclesHeld > 1) {
+        uiShowTopRightButton("XYZ");
         requestUpdateToUICore();
-        buttonHeldCallbackA = NULL;
     }
 }
 
@@ -143,7 +156,11 @@ static void setup() {
     buttonHandlerInit();
 
     buttonCallbackA = &showA;
+    buttonCallbackB = &showB;
+    buttonCallbackX = &showX;
+    buttonCallbackY = &showY;
     buttonHeldCallbackA = &showAAA;
+    buttonHeldCallbackX = &showXXX;
 
     buttonHandlerSetChangedCallback(A, &buttonCallbackA);
     buttonHandlerSetChangedCallback(B, &buttonCallbackB);
@@ -151,6 +168,9 @@ static void setup() {
     buttonHandlerSetChangedCallback(Y, &buttonCallbackY);
 
     buttonHandlerSetHeldCallback(A, &buttonHeldCallbackA);
+    buttonHandlerSetHeldCallback(B, &buttonHeldCallbackB);
+    buttonHandlerSetHeldCallback(X, &buttonHeldCallbackX);
+    buttonHandlerSetHeldCallback(Y, &buttonHeldCallbackY);
 
     rtcInit();
     rtcSetWritable(true);
@@ -162,12 +182,13 @@ static void setup() {
 }
 
 static void loop() {
-    DateTime dateTime = rtcGetDateTime();
-    if (!dateTimeEquals(currentDateTime, dateTime)) {
-        currentDateTime = dateTime;
-        updateUI();
+    rtcGetDateTime(&currentDateTime);
+    if (!dateTimeEquals(&oldDateTime, &currentDateTime)) {
+        oldDateTime = currentDateTime;
+        updateText();
     }
     buttonHandlerLoop();
+    uiLoop();
 }
 
 int main() {

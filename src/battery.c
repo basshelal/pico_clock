@@ -22,7 +22,7 @@ static float ina219_powerMultiplier_mW;
  *  @param  value
  *          value to write
  */
-static void wireWriteRegister(uint8_t reg, uint16_t value) {
+static void wireWriteRegister(const uint8_t reg, const uint16_t value) {
 
     uint8_t tmpi[3];
     tmpi[0] = reg;
@@ -39,7 +39,7 @@ static void wireWriteRegister(uint8_t reg, uint16_t value) {
  *  @param  *value
  *          read value
  */
-static void wireReadRegister(uint8_t reg, uint16_t *value) {
+static void wireReadRegister(const uint8_t reg, uint16_t *value) {
 
     uint8_t tmpi[2];
 
@@ -139,7 +139,7 @@ static void setCalibration32V2A() {
  *  @param  on
  *          boolean value
  */
-static void powerSave(bool on) {
+static void powerSave(const bool on) {
     uint16_t current;
     wireReadRegister(INA219_REG_CONFIG, &current);
     uint8_t next;

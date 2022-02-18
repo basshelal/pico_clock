@@ -6,9 +6,9 @@
 
 using namespace pimoroni;
 
-static PicoDisplay2 display = nullptr;
+static PicoDisplay2 display = NULL;
 
-void displayInit(uint16_t *buffer) {
+void displayInit(uint16_t *const buffer) {
     display = PicoDisplay2(buffer);
     display.init();
     displayClear();
@@ -21,7 +21,7 @@ void displayClear() {
     }
 }
 
-void displaySetText(const char *text, int32_t x, int32_t y, int32_t wrap, uint8_t scale) {
+void displaySetText(const char *text, const int32_t x, const int32_t y, const int32_t wrap, const uint8_t scale) {
     display.text(text, Point(x, y), wrap, scale);
 }
 

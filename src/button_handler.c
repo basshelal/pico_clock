@@ -20,7 +20,7 @@ static inline void handleStateChanged(struct ButtonState *const state) {
     }
 }
 
-static void handleCallback(uint gpio, uint32_t event) {
+static void handleCallback(const uint gpio, const uint32_t event) {
     switch (gpio) {
         case A_BUTTON_PIN:
             handleStateChanged(&stateA);
