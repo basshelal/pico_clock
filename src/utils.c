@@ -1,5 +1,7 @@
 #include "utils.h"
 
+uint64_t cyclesPassed = 0;
+
 static const char charLookup[96] = {
         ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')',
         '*', '+', ',', '-', '.', '/', '0', '1', '2', '3',

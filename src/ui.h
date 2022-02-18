@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include "pico/stdlib.h"
+#include <pico/multicore.h>
 #include <stdio.h>
 #include "display.h"
 #include "utils.h"
@@ -31,7 +32,9 @@ void uiShowBottomRightButton(const char *text);
 
 void uiSetBrightness(const uint8_t percentage);
 
-void uiUpdate();
+void uiRequestUpdate();
+
+void uiForceUpdate();
 
 void uiLoop();
 

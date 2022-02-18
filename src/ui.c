@@ -4,17 +4,10 @@ static Color color(uint8_t r, uint8_t g, uint8_t b) { return (Color) {.r=r, .g=g
 
 static Color WHITE = {.r = 255, .g = 255, .b = 255};
 static Color BLACK = {.r = 0, .g = 0, .b = 0};
-static Color GREY = {.r = 127, .g = 127, .b = 127};
 static Color RED = {.r = 255, .g = 0, .b = 0};
 static Color GREEN = {.r = 0, .g = 255, .b = 0};
 static Color BLUE = {.r = 0, .g = 0, .b = 255};
 static Color YELLOW = {.r = 255, .g = 255, .b = 0};
-static Color CYAN = {.r = 0, .g = 255, .b = 255};
-static Color MAGENTA = {.r = 255, .g = 0, .b = 255};
-static Color PINK = {.r = 255, .g = 0, .b = 127};
-static Color LIME = {.r = 127, .g = 255, .b = 0};
-static Color VIOLET = {.r = 127, .g = 0, .b = 255};
-static Color ORANGE = {.r = 255, .g = 127, .b = 0};
 
 static uint16_t *buffer;
 
@@ -92,7 +85,6 @@ static Rectangle bottomRightButtonRect = {
         .h=height
 };
 
-
 void uiClearAll() {
     displayClear();
 }
@@ -107,10 +99,33 @@ static inline void uiClearRectangle(const Rectangle rectangle) {
     uiSetRectangle(rectangle, BLACK);
 }
 
+static inline void loopUICore() {
+    int updateRequestCount = 0;
+    while (multicore_fifo_rvalid()) {
+        uint32_t data;
+        multicore_fifo_pop_timeout_us(10000, &data);
+        if (data == REQUEST_UPDATE) updateRequestCount++;
+    }
+    if (updateRequestCount > 0) {
+        uiForceUpdate();
+        printf("Update requests: %i\n", updateRequestCount);
+    }
+}
+
+static void launchUICore() {
+    while (true) {
+        loopUICore();
+        sleep_ms(UI_CORE_CYCLE);
+    }
+}
+
 void uiInit() {
     buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
     displayInit(buffer);
     displaySetColor(WHITE);
+
+    multicore_launch_core1(&launchUICore);
+    uiRequestUpdate();
 }
 
 void uiShowBatteryPercentage(const char *text) {
@@ -229,9 +244,12 @@ void uiSetBrightness(const uint8_t percentage) {
     displaySetBacklight(percentage);
 }
 
-void uiUpdate() {
+void uiRequestUpdate() {
+    multicore_fifo_push_timeout_us(REQUEST_UPDATE, 5000);
+}
+
+void uiForceUpdate() {
     displayUpdate();
-    log("UI update!\n");
 }
 
 void uiLoop() {

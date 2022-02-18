@@ -16,6 +16,8 @@ extern "C" {
 #define log(fmt, args...) /* Don't do anything in release builds */
 #endif
 
+extern uint64_t cyclesPassed;
+
 /**
  * Clears the console
  * Taken from: https://stackoverflow.com/a/7660837/7175336
