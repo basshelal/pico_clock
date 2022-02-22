@@ -1,6 +1,6 @@
 #include "button_handler.h"
 
-static struct ButtonState {
+typedef struct ButtonState {
     const Button button;
     bool isOn;
     int millisHeld;
@@ -8,12 +8,13 @@ static struct ButtonState {
     ButtonHeldCallback *heldCallback;
 } ButtonState;
 
-static struct ButtonState stateA = {.button = A_BUTTON_PIN};
-static struct ButtonState stateB = {.button = B_BUTTON_PIN};
-static struct ButtonState stateX = {.button = X_BUTTON_PIN};
-static struct ButtonState stateY = {.button = Y_BUTTON_PIN};
+static ButtonState stateA = {.button = A_BUTTON_PIN};
+static ButtonState stateB = {.button = B_BUTTON_PIN};
+static ButtonState stateX = {.button = X_BUTTON_PIN};
+static ButtonState stateY = {.button = Y_BUTTON_PIN};
 
-static inline void handleStateChanged(struct ButtonState *const state) {
+static inline void handleStateChanged(ButtonState *const state) {
+    if (!state) return;
     state->isOn = !gpio_get(state->button);
     if (state->changedCallback && (*state->changedCallback)) {
         (*state->changedCallback)(state->button, state->isOn);
@@ -100,7 +101,8 @@ void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback 
     }
 }
 
-static inline void handleHeld(struct ButtonState *const state) {
+static inline void handleHeld(ButtonState *const state) {
+    if (!state) return;
     if (state->isOn) {
         state->millisHeld += MAIN_CORE_CYCLE;
         if (state->millisHeld > 0 && state->heldCallback && (*state->heldCallback)) {

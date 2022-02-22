@@ -135,6 +135,16 @@ inline uint8_t set_bits(const uint8_t value, const uint8_t fromBit, const uint8_
 
 uint8_t get_font_index_for_char(const char c);
 
+inline uint64_t secondsToCycles(float seconds) {
+    const float cyclesPerSecond = (1000.0F / (float) MAIN_CORE_CYCLE);
+    return (uint64_t) (cyclesPerSecond * seconds);
+}
+
+inline float cyclesToSeconds(uint64_t cycles) {
+    const float cyclesPerSecond = (1000.0F / (float) MAIN_CORE_CYCLE);
+    return (uint64_t) (((float) cycles) / cyclesPerSecond);
+}
+
 #ifdef __cplusplus
 }
 #endif

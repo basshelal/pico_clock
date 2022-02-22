@@ -8,4 +8,6 @@ void uiControllerInit();
 
 void uiControllerLoop();
 
+void _showInitialButtonFunctions(const Button button, const bool buttonOn);
+
 #endif //PICO_CLOCK_UI_CONTROLLER_H

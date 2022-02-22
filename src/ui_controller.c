@@ -20,35 +20,9 @@ static void showB(const Button button, const bool buttonOn) {
     uiRequestUpdate();
 }
 
-static void showAAA(const Button button, const uint32_t cyclesHeld, const uint64_t millisHeld) {
-    static uint32_t oldCyclesHeld = 16; // any number larger than 1 will do
-    static bool isNewHold;
-    if (oldCyclesHeld < cyclesHeld) { // we went out of sync, re-sync
-        oldCyclesHeld = cyclesHeld;
-        isNewHold = false;
-    } else if (oldCyclesHeld > cyclesHeld) { // this is a new hold
-        oldCyclesHeld = cyclesHeld;
-        isNewHold = true;
-    }
-    if (cyclesHeld > 1 && isNewHold) {
-        uiShowTopLeftButton("AAA");
-        uiRequestUpdate();
-        isNewHold = false;
-    }
-    oldCyclesHeld++;
-}
-
-static void showXXX(const Button button, const uint32_t cyclesHeld, const uint64_t millisHeld) {
-    if (cyclesHeld > 1) {
-        uiShowTopRightButton("XYZ");
-        uiRequestUpdate();
-    }
-}
-
 static void showA(const Button button, const bool buttonOn) {
     if (buttonOn) {
         uiShowTopLeftButton("A");
-        heldCallbacks.A = &showAAA;
     } else {
         uiShowTopLeftButton(NULL);
     }
@@ -73,17 +47,51 @@ static void showY(const Button button, const bool buttonOn) {
     uiRequestUpdate();
 }
 
+static void clickedSetDateTimeButton(const Button button, const bool buttonOn) {
+    if (buttonOn) {
+        uiShowColoredTopLeftButton("SET DATE TIME", RED);
+        uiRequestUpdate();
+        changedCallbacks.A = &_showInitialButtonFunctions;
+    }
+}
+
+static bool countingInitialButtonCycleCounter;
+static uint32_t showInitialButtonCyclesCounter;
+
+static void hideInitialButtonFunctions() {
+    showInitialButtonCyclesCounter = 0;
+    countingInitialButtonCycleCounter = false;
+    uiShowTopLeftButton(NULL);
+    uiShowBottomLeftButton(NULL);
+    uiRequestUpdate();
+}
+
+void _showInitialButtonFunctions(const Button button, const bool buttonOn) {
+    if (buttonOn) {
+        showInitialButtonCyclesCounter = 0;
+        changedCallbacks.A = &clickedSetDateTimeButton;
+        if (!countingInitialButtonCycleCounter) {
+            countingInitialButtonCycleCounter = true;
+            uiShowTopLeftButton("SET DATE TIME");
+            uiShowBottomLeftButton("SET BRIT NESS");
+            uiRequestUpdate();
+        }
+    }
+}
+
+static void resetChangedCallbacks() {
+    changedCallbacks.A = &_showInitialButtonFunctions;
+    changedCallbacks.B = &_showInitialButtonFunctions;
+    changedCallbacks.X = &_showInitialButtonFunctions;
+    changedCallbacks.Y = &_showInitialButtonFunctions;
+}
+
 void uiControllerInit() {
     uiInit();
     uiSetBrightness(100);
     buttonHandlerInit();
 
-    changedCallbacks.A = &showA;
-    changedCallbacks.B = &showB;
-    changedCallbacks.X = &showX;
-    changedCallbacks.Y = &showY;
-    heldCallbacks.A = &showAAA;
-    heldCallbacks.X = &showXXX;
+    resetChangedCallbacks();
 
     buttonHandlerSetChangedCallback(A, &changedCallbacks.A);
     buttonHandlerSetChangedCallback(B, &changedCallbacks.B);
@@ -99,4 +107,12 @@ void uiControllerInit() {
 void uiControllerLoop() {
     buttonHandlerLoop();
     uiLoop();
+
+    if (countingInitialButtonCycleCounter) {
+        if (cyclesToSeconds(showInitialButtonCyclesCounter) > 2.0F) {
+            hideInitialButtonFunctions();
+        } else {
+            showInitialButtonCyclesCounter++;
+        }
+    }
 }

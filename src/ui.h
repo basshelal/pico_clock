@@ -12,6 +12,14 @@
 extern "C" {
 #endif
 
+Color color(uint8_t r, uint8_t g, uint8_t b);
+extern const Color WHITE;
+extern const Color BLACK;
+extern const Color RED;
+extern const Color GREEN;
+extern const Color BLUE;
+extern const Color YELLOW;
+
 void uiInit();
 
 void uiShowBatteryPercentage(const char *text);
@@ -23,6 +31,8 @@ void uiShowDate(const char *text);
 void uiShowMessage(const char *text);
 
 void uiShowTopLeftButton(const char *text);
+
+void uiShowColoredTopLeftButton(const char *text, const Color textColor);
 
 void uiShowBottomLeftButton(const char *text);
 

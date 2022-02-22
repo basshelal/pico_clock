@@ -1,13 +1,11 @@
 #include "ui.h"
 
-static Color color(uint8_t r, uint8_t g, uint8_t b) { return (Color) {.r=r, .g=g, .b = b}; }
-
-static Color WHITE = {.r = 255, .g = 255, .b = 255};
-static Color BLACK = {.r = 0, .g = 0, .b = 0};
-static Color RED = {.r = 255, .g = 0, .b = 0};
-static Color GREEN = {.r = 0, .g = 255, .b = 0};
-static Color BLUE = {.r = 0, .g = 0, .b = 255};
-static Color YELLOW = {.r = 255, .g = 255, .b = 0};
+const Color WHITE = {.r = 255, .g = 255, .b = 255};
+const Color BLACK = {.r = 0, .g = 0, .b = 0};
+const Color RED = {.r = 255, .g = 0, .b = 0};
+const Color GREEN = {.r = 0, .g = 255, .b = 0};
+const Color BLUE = {.r = 0, .g = 0, .b = 255};
+const Color YELLOW = {.r = 255, .g = 255, .b = 0};
 
 static uint16_t *buffer;
 
@@ -56,6 +54,8 @@ static const int32_t topY = DISPLAY_HEIGHT / 6;
 static const int32_t bottomY = 4 * (DISPLAY_HEIGHT / 6);
 static const int32_t width = 4 * charWidth * buttonTextScale;
 static const int32_t height = 2 * charHeight * buttonTextScale;
+
+static const int wrapWidth = 4 * charWidth * buttonTextScale;
 
 static Rectangle topLeftButtonRect = {
         .x=leftX,
@@ -174,10 +174,9 @@ void uiShowMessage(const char *text) {
     }
 }
 
-void uiShowTopLeftButton(const char *text) {
+void uiShowColoredTopLeftButton(const char *text, const Color textColor) {
     uiClearRectangle(topLeftButtonRect);
     if (text != NULL) {
-        const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
@@ -185,15 +184,20 @@ void uiShowTopLeftButton(const char *text) {
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         topLeftButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
+        displaySetColor(textColor);
         displaySetText(text, topLeftButtonRect.x, topLeftButtonRect.y,
                        wrapWidth, buttonTextScale);
+        displaySetColor(WHITE);
     }
+}
+
+void uiShowTopLeftButton(const char *text) {
+    uiShowColoredTopLeftButton(text, WHITE);
 }
 
 void uiShowBottomLeftButton(const char *text) {
     uiClearRectangle(bottomLeftButtonRect);
     if (text != NULL) {
-        const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
@@ -209,7 +213,6 @@ void uiShowBottomLeftButton(const char *text) {
 void uiShowTopRightButton(const char *text) {
     uiClearRectangle(topRightButtonRect);
     if (text != NULL) {
-        const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
@@ -226,7 +229,6 @@ void uiShowTopRightButton(const char *text) {
 void uiShowBottomRightButton(const char *text) {
     uiClearRectangle(bottomRightButtonRect);
     if (text != NULL) {
-        const int wrapWidth = 4 * charWidth * buttonTextScale;
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
