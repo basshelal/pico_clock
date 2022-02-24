@@ -2,7 +2,7 @@
 #define PICO_CLOCK_UI_CONTROLLER_H
 
 #include "button_handler.h"
-#include "ui.h"
+#include "ui_view.h"
 
 void uiControllerInit();
 

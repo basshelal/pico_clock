@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "rtc.h"
 #include "battery.h"
-#include "ui.h"
+#include "ui_view.h"
 #include "ui_controller.h"
 
 // Global state variables
@@ -39,22 +39,23 @@ static void updateText() {
     log("%s\n", dateTextBuffer);
     log("%s\n", batteryTextBuffer);
 
-    uiShowBatteryPercentage(batteryTextBuffer);
-    uiShowClock(timeTextBuffer);
-    uiShowDate(dateTextBuffer);
+    uiViewShowBatteryPercentage(batteryTextBuffer);
+    uiViewShowClock(timeTextBuffer);
+    uiViewShowDate(dateTextBuffer);
 
-    uiRequestUpdate();
+    uiViewRequestUpdate();
 }
 
 static void setup() {
     set_sys_clock_48mhz(); // as low as we can reliably go, we do this to save power
-
-    uiControllerInit();
-    stdio_usb_init();
     onLight();
 
+    uiViewInit();
+    uiControllerInit();
+    stdio_usb_init();
+
     rtcInit();
-    rtcSetIsRunning(true);
+    if (!rtcIsRunning()) rtcSetIsRunning(true);
 
     batteryInit();
 }

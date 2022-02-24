@@ -23,7 +23,7 @@ add_executable(${NAME}
         src/battery.h src/battery.c
         src/utils.h src/utils.c
         src/display.h src/display.cpp
-        src/ui.h src/ui.c
+        src/ui_view.h src/ui_view.c
         src/button_handler.h src/button_handler.c
         src/ui_controller.h src/ui_controller.c)
 

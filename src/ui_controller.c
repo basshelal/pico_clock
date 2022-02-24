@@ -15,42 +15,42 @@ static struct {
 } heldCallbacks;
 
 static void showB(const Button button, const bool buttonOn) {
-    if (buttonOn) uiShowBottomLeftButton("B");
-    else uiShowBottomLeftButton(NULL);
-    uiRequestUpdate();
+    if (buttonOn) uiViewShowBottomLeftButton("B");
+    else uiViewShowBottomLeftButton(NULL);
+    uiViewRequestUpdate();
 }
 
 static void showA(const Button button, const bool buttonOn) {
     if (buttonOn) {
-        uiShowTopLeftButton("A");
+        uiViewShowTopLeftButton("A");
     } else {
-        uiShowTopLeftButton(NULL);
+        uiViewShowTopLeftButton(NULL);
     }
-    uiRequestUpdate();
+    uiViewRequestUpdate();
 }
 
 static void showX(const Button button, const bool buttonOn) {
     if (buttonOn) {
-        uiShowTopRightButton("X");
+        uiViewShowTopRightButton("X");
     } else {
-        uiShowTopRightButton(NULL);
+        uiViewShowTopRightButton(NULL);
     }
-    uiRequestUpdate();
+    uiViewRequestUpdate();
 }
 
 static void showY(const Button button, const bool buttonOn) {
     if (buttonOn) {
-        uiShowBottomRightButton("Y");
+        uiViewShowBottomRightButton("Y");
     } else {
-        uiShowBottomRightButton(NULL);
+        uiViewShowBottomRightButton(NULL);
     }
-    uiRequestUpdate();
+    uiViewRequestUpdate();
 }
 
 static void clickedSetDateTimeButton(const Button button, const bool buttonOn) {
     if (buttonOn) {
-        uiShowColoredTopLeftButton("SET DATE TIME", RED);
-        uiRequestUpdate();
+        uiViewShowColoredTopLeftButton("SET DATE TIME", RED);
+        uiViewRequestUpdate();
         changedCallbacks.A = &_showInitialButtonFunctions;
     }
 }
@@ -61,9 +61,9 @@ static uint32_t showInitialButtonCyclesCounter;
 static void hideInitialButtonFunctions() {
     showInitialButtonCyclesCounter = 0;
     countingInitialButtonCycleCounter = false;
-    uiShowTopLeftButton(NULL);
-    uiShowBottomLeftButton(NULL);
-    uiRequestUpdate();
+    uiViewShowTopLeftButton(NULL);
+    uiViewShowBottomLeftButton(NULL);
+    uiViewRequestUpdate();
 }
 
 void _showInitialButtonFunctions(const Button button, const bool buttonOn) {
@@ -72,9 +72,9 @@ void _showInitialButtonFunctions(const Button button, const bool buttonOn) {
         changedCallbacks.A = &clickedSetDateTimeButton;
         if (!countingInitialButtonCycleCounter) {
             countingInitialButtonCycleCounter = true;
-            uiShowTopLeftButton("SET DATE TIME");
-            uiShowBottomLeftButton("SET BRIT NESS");
-            uiRequestUpdate();
+            uiViewShowTopLeftButton("SET DATE TIME");
+            uiViewShowBottomLeftButton("SET BRIT NESS");
+            uiViewRequestUpdate();
         }
     }
 }
@@ -87,8 +87,6 @@ static void resetChangedCallbacks() {
 }
 
 void uiControllerInit() {
-    uiInit();
-    uiSetBrightness(100);
     buttonHandlerInit();
 
     resetChangedCallbacks();
@@ -106,7 +104,7 @@ void uiControllerInit() {
 
 void uiControllerLoop() {
     buttonHandlerLoop();
-    uiLoop();
+    uiViewLoop();
 
     if (countingInitialButtonCycleCounter) {
         if (cyclesToSeconds(showInitialButtonCyclesCounter) > 2.0F) {

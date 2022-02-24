@@ -1,5 +1,5 @@
-#ifndef PICO_CLOCK_UI_H
-#define PICO_CLOCK_UI_H
+#ifndef PICO_CLOCK_UI_VIEW_H
+#define PICO_CLOCK_UI_VIEW_H
 
 #include <stdlib.h>
 #include "pico/stdlib.h"
@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-Color color(uint8_t r, uint8_t g, uint8_t b);
 extern const Color WHITE;
 extern const Color BLACK;
 extern const Color RED;
@@ -20,33 +19,35 @@ extern const Color GREEN;
 extern const Color BLUE;
 extern const Color YELLOW;
 
-void uiInit();
+void uiViewInit();
 
-void uiShowBatteryPercentage(const char *text);
+void uiViewClear();
 
-void uiShowClock(const char *text);
+void uiViewShowBatteryPercentage(const char *text);
 
-void uiShowDate(const char *text);
+void uiViewShowClock(const char *text);
 
-void uiShowMessage(const char *text);
+void uiViewShowDate(const char *text);
 
-void uiShowTopLeftButton(const char *text);
+void uiViewShowMessage(const char *text);
 
-void uiShowColoredTopLeftButton(const char *text, const Color textColor);
+void uiViewShowTopLeftButton(const char *text);
 
-void uiShowBottomLeftButton(const char *text);
+void uiViewShowColoredTopLeftButton(const char *text, const Color textColor);
 
-void uiShowTopRightButton(const char *text);
+void uiViewShowBottomLeftButton(const char *text);
 
-void uiShowBottomRightButton(const char *text);
+void uiViewShowTopRightButton(const char *text);
 
-void uiSetBrightness(const uint8_t percentage);
+void uiViewShowBottomRightButton(const char *text);
 
-void uiRequestUpdate();
+void uiViewSetBrightness(const uint8_t percentage);
 
-void uiForceUpdate();
+void uiViewRequestUpdate();
 
-void uiLoop();
+void uiViewForceUpdate();
+
+void uiViewLoop();
 
 // battery percentage at top left
 // middle large clock
@@ -65,4 +66,4 @@ void uiLoop();
 }
 #endif
 
-#endif //PICO_CLOCK_UI_H
+#endif //PICO_CLOCK_UI_VIEW_H

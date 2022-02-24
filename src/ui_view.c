@@ -1,4 +1,4 @@
-#include "ui.h"
+#include "ui_view.h"
 
 const Color WHITE = {.r = 255, .g = 255, .b = 255};
 const Color BLACK = {.r = 0, .g = 0, .b = 0};
@@ -85,7 +85,7 @@ static Rectangle bottomRightButtonRect = {
         .h=height
 };
 
-void uiClearAll() {
+void uiViewClear() {
     displayClear();
 }
 
@@ -107,7 +107,7 @@ static inline void loopUICore() {
         if (data == REQUEST_UPDATE) updateRequestCount++;
     }
     if (updateRequestCount > 0) {
-        uiForceUpdate();
+        uiViewForceUpdate();
         printf("Update requests: %i\n", updateRequestCount);
     }
 }
@@ -119,16 +119,18 @@ static void launchUICore() {
     }
 }
 
-void uiInit() {
+void uiViewInit() {
     buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
     displayInit(buffer);
     displaySetColor(WHITE);
+    uiViewClear();
 
     multicore_launch_core1(&launchUICore);
-    uiRequestUpdate();
+    uiViewRequestUpdate();
+    uiViewSetBrightness(100);
 }
 
-void uiShowBatteryPercentage(const char *text) {
+void uiViewShowBatteryPercentage(const char *text) {
     uiClearRectangle(batteryRectangle);
     if (text != NULL) {
         batteryRectangle.w = (displayGetStringWidth(text) * batteryTextScale);
@@ -137,7 +139,7 @@ void uiShowBatteryPercentage(const char *text) {
     }
 }
 
-void uiShowClock(const char *text) {
+void uiViewShowClock(const char *text) {
     uiClearRectangle(clockRect);
     if (text != NULL) {
         clockRect.w = (displayGetStringWidth(text) * clockTextScale);
@@ -147,7 +149,7 @@ void uiShowClock(const char *text) {
     }
 }
 
-void uiShowDate(const char *text) {
+void uiViewShowDate(const char *text) {
     uiClearRectangle(dateRect);
     if (text) {
         dateRect.w = (displayGetStringWidth(text) * dateTextScale);
@@ -157,7 +159,7 @@ void uiShowDate(const char *text) {
     }
 }
 
-void uiShowMessage(const char *text) {
+void uiViewShowMessage(const char *text) {
     uiClearRectangle(messageRect);
     if (text != NULL) {
         const int wrapWidth = DISPLAY_WIDTH - (2 * 4 * charWidth * buttonTextScale);
@@ -174,7 +176,7 @@ void uiShowMessage(const char *text) {
     }
 }
 
-void uiShowColoredTopLeftButton(const char *text, const Color textColor) {
+void uiViewShowColoredTopLeftButton(const char *text, const Color textColor) {
     uiClearRectangle(topLeftButtonRect);
     if (text != NULL) {
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -191,11 +193,11 @@ void uiShowColoredTopLeftButton(const char *text, const Color textColor) {
     }
 }
 
-void uiShowTopLeftButton(const char *text) {
-    uiShowColoredTopLeftButton(text, WHITE);
+void uiViewShowTopLeftButton(const char *text) {
+    uiViewShowColoredTopLeftButton(text, WHITE);
 }
 
-void uiShowBottomLeftButton(const char *text) {
+void uiViewShowBottomLeftButton(const char *text) {
     uiClearRectangle(bottomLeftButtonRect);
     if (text != NULL) {
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -210,7 +212,7 @@ void uiShowBottomLeftButton(const char *text) {
     }
 }
 
-void uiShowTopRightButton(const char *text) {
+void uiViewShowTopRightButton(const char *text) {
     uiClearRectangle(topRightButtonRect);
     if (text != NULL) {
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -226,7 +228,7 @@ void uiShowTopRightButton(const char *text) {
     }
 }
 
-void uiShowBottomRightButton(const char *text) {
+void uiViewShowBottomRightButton(const char *text) {
     uiClearRectangle(bottomRightButtonRect);
     if (text != NULL) {
         const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
@@ -242,18 +244,18 @@ void uiShowBottomRightButton(const char *text) {
     }
 }
 
-void uiSetBrightness(const uint8_t percentage) {
+void uiViewSetBrightness(const uint8_t percentage) {
     displaySetBacklight(percentage);
 }
 
-void uiRequestUpdate() {
+void uiViewRequestUpdate() {
     multicore_fifo_push_timeout_us(REQUEST_UPDATE, 5000);
 }
 
-void uiForceUpdate() {
+void uiViewForceUpdate() {
     displayUpdate();
 }
 
-void uiLoop() {
+void uiViewLoop() {
 
 }
