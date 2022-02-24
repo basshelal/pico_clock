@@ -5,6 +5,7 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
+#include "constants.h"
 
 #ifdef __cplusplus
 extern "C" {

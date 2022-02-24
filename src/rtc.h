@@ -1,6 +1,12 @@
 #ifndef PICO_CLOCK_RTC_H
 #define PICO_CLOCK_RTC_H
 
+#include "hardware/i2c.h"
+#include "pico/stdlib.h"
+#include <stdio.h>
+#include "constants.h"
+#include "utils.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,7 +41,9 @@ void rtcInit();
 
 bool rtcIsRunning();
 
-bool rtcIsWritable();
+bool rtcIsErrored();
+
+bool rtcIsBatteryEnabled();
 
 uint32_t rtcGetBaudRate();
 
@@ -45,19 +53,21 @@ uint8_t rtcGetMinutes();
 
 uint8_t rtcGetHours();
 
+WeekDay rtcGetWeekday();
+
 uint8_t rtcGetDate();
 
 uint8_t rtcGetMonth();
-
-WeekDay rtcGetWeekday();
 
 uint8_t rtcGetYear();
 
 void rtcGetDateTime(DateTime *const result);
 
-void rtcSetRunning(const bool running);
+void rtcSetIsRunning(const bool isRunning);
 
-void rtcSetWritable(const bool writable);
+void rtcSetIsErrored(const bool isErrored);
+
+void rtcSetIsBatteryEnabled(const bool isBatteryEnabled);
 
 void rtcSetBaudRate(const uint32_t baudrate);
 
@@ -67,13 +77,15 @@ void rtcSetMinutes(const uint8_t minutes);
 
 void rtcSetHours(const uint8_t hours);
 
+void rtcSetWeekday(const WeekDay weekday);
+
 void rtcSetDate(const uint8_t date);
 
 void rtcSetMonth(const uint8_t month);
 
-void rtcSetWeekday(const WeekDay weekday);
-
 void rtcSetYear(const uint8_t year);
+
+void rtcSetDateTime(const DateTime *const dateTime);
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 // All code taken from https://www.waveshare.com/wiki/Pico-UPS-B
 // From the "resources" section of the wiki
-// Only removed the "main" function and added a "get_percentage()" function
-// based on the original code's way of calculating battery percentage
+// Only minor non-functional changes made for better refactoring and
+// added batteryGetPercentage() function
 
 #include "battery.h"
 
@@ -29,7 +29,7 @@ static void wireWriteRegister(const uint8_t reg, const uint16_t value) {
     tmpi[1] = (value >> 8) & 0xFF;
     tmpi[2] = value & 0xFF;
 
-    i2c_write_blocking(i2c1, INA219_ADDRESS, tmpi, 3, false); // true to keep master control of bus
+    i2c_write_blocking(BATTERY_I2C, INA219_ADDRESS, tmpi, 3, false); // true to keep master control of bus
 }
 
 /*!
@@ -43,8 +43,8 @@ static void wireReadRegister(const uint8_t reg, uint16_t *value) {
 
     uint8_t tmpi[2];
 
-    i2c_write_blocking(i2c1, INA219_ADDRESS, &reg, 1, true); // true to keep master control of bus
-    i2c_read_blocking(i2c1, INA219_ADDRESS, tmpi, 2, false);
+    i2c_write_blocking(BATTERY_I2C, INA219_ADDRESS, &reg, 1, true); // true to keep master control of bus
+    i2c_read_blocking(BATTERY_I2C, INA219_ADDRESS, tmpi, 2, false);
     *value = (((uint16_t) tmpi[0] << 8) | (uint16_t) tmpi[1]);
 }
 
@@ -237,11 +237,11 @@ void batteryInit() {
     ina219_i2caddr = INA219_ADDRESS;
     ina219_currentDivider_mA = 0;
     ina219_powerMultiplier_mW = 0.0f;
-    i2c_init(i2c1, 400 * 1000);
-    gpio_set_function(6, GPIO_FUNC_I2C);
-    gpio_set_function(7, GPIO_FUNC_I2C);
-    gpio_pull_up(6);
-    gpio_pull_up(7);
+    i2c_init(BATTERY_I2C, BATTERY_BAUD_RATE);
+    gpio_set_function(BATTERY_SCLK_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(BATTERY_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(BATTERY_SCLK_PIN);
+    gpio_pull_up(BATTERY_SDA_PIN);
     setCalibration32V2A();
     powerSave(true);
 }

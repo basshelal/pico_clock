@@ -16,7 +16,9 @@ extern "C" {
 #define log(fmt, args...) /* Don't do anything in release builds */
 #endif
 
-extern uint64_t cyclesPassed;
+uint64_t getCyclesPassed();
+
+void finishCycle();
 
 /**
  * Clears the console

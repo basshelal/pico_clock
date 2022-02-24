@@ -1,24 +1,19 @@
-#include "pico/stdlib.h"
-#include <stdio.h>
-
 #include "rtc.h"
-#include "constants.h"
-#include "utils.h"
 
-/*
- * Much of the ideas and fundamental issues were inspired by this:
- * https://codebender.cc/library/DS1302#DS1302.cpp
- */
+#define RTC_I2C_ADDRESS 0x68
+#define REG_SECONDS 0x00
+#define REG_MINUTES 0x01
+#define REG_HOURS 0x02
+#define REG_WEEKDAY 0x03
+#define REG_DATE 0x04
+#define REG_MONTH 0x05
+#define REG_YEAR 0x06
+#define REG_CONTROL 0x0E
+#define REG_STATUS 0x0F
 
-#define REG_SECONDS 0
-#define REG_MINUTES 1
-#define REG_HOURS 2
-#define REG_DATE 3
-#define REG_MONTH 4
-#define REG_WEEKDAY 5
-#define REG_YEAR 6
-#define REG_WRITE_PROTECT 7
-#define REG_TRICKLE_CHARGE 8
+#define I2C_TIMEOUT_US 5000
+
+static uint32_t rtcBaudrate;
 
 inline bool dateTimeEquals(const DateTime *a, const DateTime *b) {
     if (!a && !b) return true;
@@ -86,73 +81,49 @@ inline const char *monthToString(const uint8_t month) {
 }
 
 static uint8_t readRegister(const uint8_t reg) {
-    // The DS1302 is least-significant-bit first which the pico doesn't support, so we have to reverse the bits
-    // between spi calls to both read and write
-
-    uint8_t cmdByte = 0x81; // 10000001 first bit is mandatory for communication, last bit signifies read
-    cmdByte |= (reg << 1);
-
-    cmdByte = reverse_bits(cmdByte);
-
     uint8_t readValue;
-
-    gpio_put(RTC_CS_PIN, 1);
-    spi_write_blocking(RTC_SPI, &cmdByte, 1);
-    spi_read_blocking(RTC_SPI, 0, &readValue, 1);
-    gpio_put(RTC_CS_PIN, 0);
-
-    uint8_t result = reverse_bits(readValue);
-    return result;
+    i2c_write_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, &reg, 1, true, I2C_TIMEOUT_US);
+    i2c_read_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, &readValue, 1, false, I2C_TIMEOUT_US);
+    return readValue;
 }
 
 static void writeRegister(const uint8_t reg, const uint8_t value) {
-    uint8_t cmdByte = 0x80; // 10000000 first bit is mandatory for communication, last bit signifies read 0 means write
-    cmdByte |= (reg << 1);
-
-    cmdByte = reverse_bits(cmdByte);
-    const uint8_t reversedValue = reverse_bits(value);
-
-    gpio_put(RTC_CS_PIN, 1);
-    spi_write_blocking(RTC_SPI, &cmdByte, 1);
-    spi_write_blocking(RTC_SPI, &reversedValue, 1);
-    gpio_put(RTC_CS_PIN, 0);
+    const uint8_t array[2] = {reg, value};
+    i2c_write_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, array, 2, false, I2C_TIMEOUT_US);
 }
 
 void rtcInit() {
-    gpio_set_function(RTC_MISO_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(RTC_MOSI_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(RTC_SCK_PIN, GPIO_FUNC_SPI);
-
-    gpio_set_function(RTC_CS_PIN, GPIO_FUNC_SIO);
-    gpio_set_dir(RTC_CS_PIN, GPIO_OUT);
-    gpio_put(RTC_CS_PIN, 0);
-
-    spi_init(RTC_SPI, 500 KHz);
-    spi_set_slave(RTC_SPI, false);
-
-    spi_set_format(RTC_SPI, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    gpio_set_function(RTC_SCLK_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(RTC_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(RTC_SCLK_PIN);
+    gpio_pull_up(RTC_SDA_PIN);
+    rtcBaudrate = i2c_init(RTC_I2C, RTC_BAUD_RATE);
 }
 
 bool rtcIsRunning() {
+    return !rtcIsErrored() && rtcIsBatteryEnabled();
+}
+
+bool rtcIsErrored() {
+    const uint8_t rawStatus = readRegister(REG_STATUS);
+    // first bit is reserved for OSC stop flag, 0 if ok, 1 if stopped
+    bool isHalted = get_bits(rawStatus, 0, 0);
+    return isHalted;
+}
+
+bool rtcIsBatteryEnabled() {
+    const uint8_t rawControl = readRegister(REG_CONTROL);
+    // first bit is reserved for OSC enable (during battery power), 0 if ok, 1 if stopped
+    bool oscStoppedOnBattery = get_bits(rawControl, 0, 0);
+    return !oscStoppedOnBattery;
+}
+
+uint32_t rtcGetBaudRate() { return rtcBaudrate; }
+
+uint8_t rtcGetSeconds() {
     const uint8_t rawSeconds = readRegister(REG_SECONDS);
-    // first bit is reserved for Clock Halt, 0 if running, 1 if halted
-    bool isHalted = get_bits(rawSeconds, 0, 0);
-    return !isHalted;
-}
 
-bool rtcIsWritable() {
-    const uint8_t rawWriteProtect = readRegister(REG_WRITE_PROTECT);
-    // first bit is reserved for Write Protect, 0 if writable, 1 if write protected
-    bool isProtected = get_bits(rawWriteProtect, 0, 0);
-    return !isProtected;
-}
-
-uint32_t rtcGetBaudRate() {
-    return spi_get_baudrate(RTC_SPI);
-}
-
-static inline uint8_t decodeSeconds(const uint8_t rawSeconds) {
-    // first bit is reserved for Clock Halt, 0 if running, 1 if halted
+    // first bit is unused
 
     // next 3 bits are the seconds tens part (like if 26 then 2, or if 5 then 0)
     const uint8_t secondsTens = get_bits(rawSeconds, 1, 3);
@@ -164,13 +135,10 @@ static inline uint8_t decodeSeconds(const uint8_t rawSeconds) {
     return seconds;
 }
 
-uint8_t rtcGetSeconds() {
-    const uint8_t rawSeconds = readRegister(REG_SECONDS);
-    return decodeSeconds(rawSeconds);
-}
+uint8_t rtcGetMinutes() {
+    const uint8_t rawMinutes = readRegister(REG_MINUTES);
 
-static inline uint8_t decodeMinutes(const uint8_t rawMinutes) {
-    // first bit is blank/ignored
+    // first bit is unused
 
     // next 3 bits are the minutes tens part (like if 26 then 2, or if 5 then 0)
     const uint8_t minutesTens = get_bits(rawMinutes, 1, 3);
@@ -182,25 +150,21 @@ static inline uint8_t decodeMinutes(const uint8_t rawMinutes) {
     return minutes;
 }
 
-uint8_t rtcGetMinutes() {
-    const uint8_t rawMinutes = readRegister(REG_MINUTES);
-    return decodeMinutes(rawMinutes);
-}
-
-static inline uint8_t decodeHours(const uint8_t rawHours) {
-    // first bit is 12/24 mode, if 1 then in 12hr mode, if 0 then in 24hr mode
-    const bool hoursMode = get_bits(rawHours, 0, 0);
+uint8_t rtcGetHours() {
+    const uint8_t rawHours = readRegister(REG_HOURS);
+    // bit 1 is 12/24 mode, if 1 then in 12hr mode, if 0 then in 24hr mode
+    const bool hoursMode = get_bits(rawHours, 1, 1);
 
     uint8_t hoursTens;
     if (!hoursMode) { // 24hr mode
-        // bit 3 and 4 are hours tens part (like if 26 then 2, or if 5 then 0)
+        // bit 2 and 3 are hours tens part (like if 26 then 2, or if 5 then 0)
         hoursTens = get_bits(rawHours, 2, 3);
     } else { // 12hr mode
-        // bit 4 is the hours tens part (like if 26 then 2, or if 5 then 0)
-        const uint8_t hoursTens12hr = get_bits(rawHours, 3, 3);
+        // bit 2 is am or pm, 1 is pm, 0 is am
+        const uint8_t hoursPM = get_bits(rawHours, 2, 2);
 
-        // bit 5 is am or pm, 1 is pm, 0 is am
-        const uint8_t hoursPM = get_bits(rawHours, 4, 4);
+        // bit 3 is the hours tens part (like if 26 then 2, or if 5 then 0)
+        const uint8_t hoursTens12hr = get_bits(rawHours, 3, 3);
 
         // tens in 24hr mode is just tens in 12hr mode plus 1 if it is pm, ie if 10pm then 1+1 ie 2
         // (tens of 22 in 24hr mode)
@@ -214,12 +178,17 @@ static inline uint8_t decodeHours(const uint8_t rawHours) {
     return hours;
 }
 
-uint8_t rtcGetHours() {
-    const uint8_t rawHours = readRegister(REG_HOURS);
-    return decodeHours(rawHours);
+WeekDay rtcGetWeekday() {
+    const uint8_t rawWeekday = readRegister(REG_WEEKDAY);
+    // first 5 bits are unused
+
+    // last 3 bits are the weekday units
+    const uint8_t weekday = get_bits(rawWeekday, 5, 7);
+    return (WeekDay) weekday;
 }
 
-static inline uint8_t decodeDate(const uint8_t rawDate) {
+uint8_t rtcGetDate() {
+    const uint8_t rawDate = readRegister(REG_DATE);
     // first 2 bits are blank/ignored
 
     // next 2 bits are the date tens part (like if 26 then 2, or if 5 then 0)
@@ -232,15 +201,11 @@ static inline uint8_t decodeDate(const uint8_t rawDate) {
     return date;
 }
 
-uint8_t rtcGetDate() {
-    const uint8_t rawDate = readRegister(REG_DATE);
-    return decodeDate(rawDate);
-}
+uint8_t rtcGetMonth() {
+    const uint8_t rawMonth = readRegister(REG_MONTH);
+    // first bit is for century which we won't use
 
-static inline uint8_t decodeMonth(const uint8_t rawMonth) {
-    // first 3 bits are blank/ignored
-
-    // next 1 bit is the month tens part (like if 12 then 1, or if 5 then 0)
+    // bit 3 is the month tens part (like if 12 then 1, or if 5 then 0)
     const uint8_t monthTens = get_bits(rawMonth, 3, 3);
 
     // last 4 bits are the month units (like if 12 then the 2 part, or if 5 then 5)
@@ -250,25 +215,8 @@ static inline uint8_t decodeMonth(const uint8_t rawMonth) {
     return month;
 }
 
-uint8_t rtcGetMonth() {
-    const uint8_t rawMonth = readRegister(REG_MONTH);
-    return decodeMonth(rawMonth);
-}
-
-static inline uint8_t decodeWeekday(const uint8_t rawWeekday) {
-    // first 5 bits are blank/ignored
-
-    // last 3 bits are the weekday units
-    const uint8_t weekday = get_bits(rawWeekday, 5, 7);
-    return weekday;
-}
-
-WeekDay rtcGetWeekday() {
-    const uint8_t rawWeekday = readRegister(REG_WEEKDAY);
-    return (WeekDay) decodeWeekday(rawWeekday);
-}
-
-static inline uint8_t decodeYear(const uint8_t rawYear) {
+uint8_t rtcGetYear() {
+    const uint8_t rawYear = readRegister(REG_YEAR);
     // first 4 bits are the year tens part (like if 22 then 2, or if 5 then 0)
     const uint8_t yearTens = get_bits(rawYear, 0, 3);
 
@@ -279,53 +227,38 @@ static inline uint8_t decodeYear(const uint8_t rawYear) {
     return year;
 }
 
-uint8_t rtcGetYear() {
-    const uint8_t rawYear = readRegister(REG_YEAR);
-    return decodeYear(rawYear);
-}
-
 void rtcGetDateTime(DateTime *const result) {
     if (!result) return;
-    // Burst read mode
-    uint8_t cmdByte = 0xBF;
-    cmdByte = reverse_bits(cmdByte);
-
-    uint8_t readValue[8];
-
-    gpio_put(RTC_CS_PIN, 1);
-    spi_write_blocking(RTC_SPI, &cmdByte, 1);
-    spi_read_blocking(RTC_SPI, 0, readValue, 8);
-    gpio_put(RTC_CS_PIN, 0);
-
-    for (int i = 0; i < sizeof(readValue); ++i) {
-        readValue[i] = reverse_bits(readValue[i]);
-    }
-
-    result->seconds = decodeSeconds(readValue[0]);
-    result->minutes = decodeMinutes(readValue[1]);
-    result->hours = decodeHours(readValue[2]);
-    result->date = decodeDate(readValue[3]);
-    result->month = decodeDate(readValue[4]);
-    result->weekDay = (WeekDay) decodeWeekday(readValue[5]);
-    result->year = decodeYear(readValue[6]);
+    result->seconds = rtcGetSeconds();
+    result->minutes = rtcGetMinutes();
+    result->hours = rtcGetHours();
+    result->weekDay = rtcGetWeekday();
+    result->date = rtcGetDate();
+    result->month = rtcGetMonth();
+    result->year = rtcGetYear();
 }
 
-void rtcSetRunning(const bool running) {
-    const uint8_t rawSeconds = readRegister(REG_SECONDS);
-    // get original seconds, we will only change the 0th bit
-    const uint8_t value = set_bits(rawSeconds, 0, 0, !running);
-    // 0 if running, 1 if halted at the 0th bit
-    writeRegister(REG_SECONDS, value);
+void rtcSetIsRunning(const bool isRunning) {
+    rtcSetIsErrored(!isRunning);
+    rtcSetIsBatteryEnabled(isRunning);
 }
 
-void rtcSetWritable(const bool writable) {
-    const uint8_t value = set_bits(0x00, 0, 0, !writable);
-    // 0 if writable, 1 if write protected at 0th bit
-    writeRegister(REG_WRITE_PROTECT, value);
+void rtcSetIsErrored(const bool isErrored) {
+    const uint8_t rawStatus = readRegister(REG_STATUS);
+    // first bit is reserved for OSC stop flag, 0 if ok, 1 if stopped
+    const uint8_t value = set_bits(rawStatus, 0, 0, isErrored);
+    writeRegister(REG_STATUS, value);
+}
+
+void rtcSetIsBatteryEnabled(const bool isBatteryEnabled) {
+    const uint8_t rawControl = readRegister(REG_CONTROL);
+    // first bit is reserved for OSC enable (during battery power), 0 if ok, 1 if stopped
+    const uint8_t value = set_bits(rawControl, 0, 0, isBatteryEnabled);
+    writeRegister(REG_STATUS, value);
 }
 
 void rtcSetBaudRate(const uint32_t baudrate) {
-    spi_set_baudrate(RTC_SPI, baudrate);
+    rtcBaudrate = i2c_set_baudrate(RTC_I2C, baudrate);
 }
 
 void rtcSetSeconds(const uint8_t seconds) {
@@ -336,7 +269,7 @@ void rtcSetSeconds(const uint8_t seconds) {
     const uint8_t secondsUnits = clampedSeconds % 10;
 
     const uint8_t rawSeconds = readRegister(REG_SECONDS);
-    // get original seconds, we will change all but the 0th bit which is the Clock Halt flag
+    // get original seconds, we will change all but the 0th bit which is unused
 
     uint8_t value = set_bits(rawSeconds, 1, 3, secondsTens);
     // bits 1-3 are the seconds tens part
@@ -371,7 +304,7 @@ void rtcSetHours(const uint8_t hours) {
     const uint8_t hoursUnits = clampedHours % 10;
 
     uint8_t value = 0;
-    // 0th bit is 12/24 mode, 1 if 12hr mode, 0 if 24hr mode, we always use 24hr mode
+    // bit 1 is 12/24 mode, 1 if 12hr mode, 0 if 24hr mode, we always use 24hr mode
 
     value = set_bits(value, 2, 3, hoursTens);
     // bits 2-3 are the hours tens part
@@ -380,6 +313,16 @@ void rtcSetHours(const uint8_t hours) {
     // bits 4-7 are the hours units part
 
     writeRegister(REG_HOURS, value);
+}
+
+void rtcSetWeekday(const WeekDay weekday) {
+    const WeekDay clampedWeekday = (weekday < 1 || weekday > 7) ? MONDAY : weekday;
+    // if user gave weekday out of range, set it to Monday (1)
+
+    uint8_t value = set_bits(0, 5, 7, clampedWeekday);
+    // bits 5-7 are the weekday units
+
+    writeRegister(REG_WEEKDAY, value);
 }
 
 void rtcSetDate(const uint8_t date) {
@@ -414,16 +357,6 @@ void rtcSetMonth(const uint8_t month) {
     writeRegister(REG_MONTH, value);
 }
 
-void rtcSetWeekday(const WeekDay weekday) {
-    const WeekDay clampedWeekday = (weekday < 1 || weekday > 7) ? MONDAY : weekday;
-    // if user gave weekday out of range, set it to Monday (1)
-
-    uint8_t value = set_bits(0, 5, 7, clampedWeekday);
-    // bits 5-7 are the weekday units
-
-    writeRegister(REG_WEEKDAY, value);
-}
-
 void rtcSetYear(const uint8_t year) {
     const uint8_t clampedYear = (year < 0 || year > 99) ? 0 : year;
     // if user gave year out of range, set it to 0
@@ -438,4 +371,15 @@ void rtcSetYear(const uint8_t year) {
     // bits 4-7 are the year units part
 
     writeRegister(REG_YEAR, value);
+}
+
+void rtcSetDateTime(const DateTime *const dateTime) {
+    if (!dateTime) return;
+    rtcSetSeconds(dateTime->seconds);
+    rtcSetMinutes(dateTime->minutes);
+    rtcSetHours(dateTime->hours);
+    rtcSetWeekday(dateTime->weekDay);
+    rtcSetDate(dateTime->date);
+    rtcSetMonth(dateTime->month);
+    rtcSetYear(dateTime->year);
 }

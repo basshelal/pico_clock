@@ -1,6 +1,10 @@
 #include "utils.h"
 
-uint64_t cyclesPassed = 0;
+static uint64_t cyclesPassed = 0;
+
+uint64_t getCyclesPassed() { return cyclesPassed; }
+
+void finishCycle() { cyclesPassed++; }
 
 static const char charLookup[96] = {
         ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')',

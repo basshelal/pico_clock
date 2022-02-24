@@ -54,8 +54,7 @@ static void setup() {
     onLight();
 
     rtcInit();
-    rtcSetWritable(true);
-    rtcSetRunning(true);
+    rtcSetIsRunning(true);
 
     batteryInit();
 }
@@ -74,6 +73,6 @@ int main() {
     while (true) {
         loop();
         sleep_ms(MAIN_CORE_CYCLE);
-        cyclesPassed++;
+        finishCycle();
     }
 }

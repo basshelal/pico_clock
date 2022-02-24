@@ -2,21 +2,24 @@
 #define PICO_CLOCK_CONSTANTS_H
 
 #include "hardware/spi.h"
+#include "hardware/i2c.h"
 
 // set to 0 for release, used only for printing information when in debug mode
 #define DEBUG 1
 
 #define ON_LIGHT_PIN PICO_DEFAULT_LED_PIN
 
-#define KHz * 1000
-#define MHz * 1000000
+// Battery
+#define BATTERY_SCLK_PIN 7
+#define BATTERY_SDA_PIN 6
+#define BATTERY_I2C i2c1
+#define BATTERY_BAUD_RATE (400 * 1000)
 
 // RTC
-#define RTC_MISO_PIN 12
-#define RTC_MOSI_PIN 11
-#define RTC_SCK_PIN 14
-#define RTC_CS_PIN 13
-#define RTC_SPI spi1
+#define RTC_SCLK_PIN 5
+#define RTC_SDA_PIN 4
+#define RTC_I2C i2c0
+#define RTC_BAUD_RATE (400 * 1000)
 
 // Screen
 #define SCREEN_LCD_TF 21
@@ -26,11 +29,14 @@
 #define SCREEN_LCD_CS 17
 #define SCREEN_LCD_DC 16
 
-#define A_BUTTON_PIN 0
-#define B_BUTTON_PIN 1
-#define X_BUTTON_PIN 2
-#define Y_BUTTON_PIN 3
-#define SCREEN_LED_PIN 4
+#define SCREEN_LED_R 6
+#define SCREEN_LED_G 7
+#define SCREEN_LED_B 8
+
+#define A_BUTTON_PIN 12
+#define B_BUTTON_PIN 13
+#define X_BUTTON_PIN 14
+#define Y_BUTTON_PIN 15
 
 // Core sleep time (cycle)
 #define MAIN_CORE_CYCLE (1000 / 4)
