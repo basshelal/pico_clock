@@ -41,8 +41,8 @@
 #define Y_BUTTON_PIN 15
 
 // Core sleep time (cycle)
-#define MAIN_CORE_CYCLE (1000 / 4)
-#define UI_CORE_CYCLE (1000 / 30)
+#define MILLIS_PER_CYCLE_MAIN_CORE (1000 / 4)
+#define MILLIS_PER_CYCLE_UI_CORE (1000 / 30)
 
 #define REQUEST_UPDATE 1
 

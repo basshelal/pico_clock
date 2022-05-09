@@ -8,5 +8,5 @@ while true; do
     echo "FOUND!"
     ./build.sh
   fi
-  sleep 2s
+  sleep 1s
 done

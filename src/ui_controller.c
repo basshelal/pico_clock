@@ -1,116 +1,67 @@
 #include "ui_controller.h"
 
 static struct {
-    ButtonChangedCallback A;
-    ButtonChangedCallback B;
-    ButtonChangedCallback X;
-    ButtonChangedCallback Y;
-} changedCallbacks;
+    bool isShowing;
+    uint64_t millisSinceLastPress;
+    bool countingMillisSinceLastPress;
+    enum {
+        NONE, SET_TIME, SET_BRIGHTNESS
+    } currentMode;
+    int pressCountA;
+} state;
 
-static struct {
-    ButtonHeldCallback A;
-    ButtonHeldCallback B;
-    ButtonHeldCallback X;
-    ButtonHeldCallback Y;
-} heldCallbacks;
+char buffer[512];
 
-static void showB(const Button button, const bool buttonOn) {
-    if (buttonOn) uiViewShowBottomLeftButton("B");
-    else uiViewShowBottomLeftButton(NULL);
-    uiViewRequestUpdate();
-}
+static void changedCallbackButtonA(const ButtonState *const buttonState) {
+    if (state.isShowing) {
+        if (buttonState->isOn) {
+            state.countingMillisSinceLastPress = true;
+            state.millisSinceLastPress = 0;
+            state.pressCountA++;
 
-static void showA(const Button button, const bool buttonOn) {
-    if (buttonOn) {
-        uiViewShowTopLeftButton("A");
-    } else {
-        uiViewShowTopLeftButton(NULL);
-    }
-    uiViewRequestUpdate();
-}
+            snprintf(buffer, 512, "Pressed A %i times", state.pressCountA);
+            uiViewShowMessage(buffer);
 
-static void showX(const Button button, const bool buttonOn) {
-    if (buttonOn) {
-        uiViewShowTopRightButton("X");
-    } else {
-        uiViewShowTopRightButton(NULL);
-    }
-    uiViewRequestUpdate();
-}
+            uiViewRequestUpdate();
+        }
+    } else if (!state.isShowing) {
+        if (buttonState->isOn) {
+            state.countingMillisSinceLastPress = true;
+            state.millisSinceLastPress = 0;
+            state.pressCountA++;
 
-static void showY(const Button button, const bool buttonOn) {
-    if (buttonOn) {
-        uiViewShowBottomRightButton("Y");
-    } else {
-        uiViewShowBottomRightButton(NULL);
-    }
-    uiViewRequestUpdate();
-}
+            state.isShowing = true;
+            uiViewShowTopLeftButton("A");
 
-static void clickedSetDateTimeButton(const Button button, const bool buttonOn) {
-    if (buttonOn) {
-        uiViewShowColoredTopLeftButton("SET DATE TIME", RED);
-        uiViewRequestUpdate();
-        changedCallbacks.A = &_showInitialButtonFunctions;
-    }
-}
+            snprintf(buffer, 512, "Pressed A %i times", state.pressCountA);
+            uiViewShowMessage(buffer);
 
-static bool countingInitialButtonCycleCounter;
-static uint32_t showInitialButtonCyclesCounter;
-
-static void hideInitialButtonFunctions() {
-    showInitialButtonCyclesCounter = 0;
-    countingInitialButtonCycleCounter = false;
-    uiViewShowTopLeftButton(NULL);
-    uiViewShowBottomLeftButton(NULL);
-    uiViewRequestUpdate();
-}
-
-void _showInitialButtonFunctions(const Button button, const bool buttonOn) {
-    if (buttonOn) {
-        showInitialButtonCyclesCounter = 0;
-        changedCallbacks.A = &clickedSetDateTimeButton;
-        if (!countingInitialButtonCycleCounter) {
-            countingInitialButtonCycleCounter = true;
-            uiViewShowTopLeftButton("SET DATE TIME");
-            uiViewShowBottomLeftButton("SET BRIT NESS");
             uiViewRequestUpdate();
         }
     }
 }
 
-static void resetChangedCallbacks() {
-    changedCallbacks.A = &_showInitialButtonFunctions;
-    changedCallbacks.B = &_showInitialButtonFunctions;
-    changedCallbacks.X = &_showInitialButtonFunctions;
-    changedCallbacks.Y = &_showInitialButtonFunctions;
-}
-
 void uiControllerInit() {
+    uiViewInit();
     buttonHandlerInit();
 
-    resetChangedCallbacks();
-
-    buttonHandlerSetChangedCallback(A, &changedCallbacks.A);
-    buttonHandlerSetChangedCallback(B, &changedCallbacks.B);
-    buttonHandlerSetChangedCallback(X, &changedCallbacks.X);
-    buttonHandlerSetChangedCallback(Y, &changedCallbacks.Y);
-
-    buttonHandlerSetHeldCallback(A, &heldCallbacks.A);
-    buttonHandlerSetHeldCallback(B, &heldCallbacks.B);
-    buttonHandlerSetHeldCallback(X, &heldCallbacks.X);
-    buttonHandlerSetHeldCallback(Y, &heldCallbacks.Y);
+    buttonStateA.changedCallback = changedCallbackButtonA;
 }
 
 void uiControllerLoop() {
     buttonHandlerLoop();
     uiViewLoop();
 
-    if (countingInitialButtonCycleCounter) {
-        if (cyclesToSeconds(showInitialButtonCyclesCounter) > 2.0F) {
-            hideInitialButtonFunctions();
-        } else {
-            showInitialButtonCyclesCounter++;
-        }
+    if (state.countingMillisSinceLastPress) {
+        state.millisSinceLastPress += MILLIS_PER_CYCLE_MAIN_CORE;
+    }
+    if (state.millisSinceLastPress > 2000) {
+        state.countingMillisSinceLastPress = false;
+        state.millisSinceLastPress = 0;
+
+        state.isShowing = false;
+        uiViewClearDetails();
+
+        state.pressCountA = 0;
     }
 }

@@ -8,6 +8,11 @@
 #include "display.h"
 #include "utils.h"
 
+/**
+ * The UIView is a single module that is responsible for any manipulation of the screen.
+ * Thus, it abstracts away the lower level details of modifying the screen's buffer directly
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,9 +24,14 @@ extern const Color GREEN;
 extern const Color BLUE;
 extern const Color YELLOW;
 
+/** Call once before UIView use */
 void uiViewInit();
 
-void uiViewClear();
+/** Clears the entire UI */
+void uiViewClearAll();
+
+/** Clears the details of the UI, leaving the core UI elements, the clock and date */
+void uiViewClearDetails();
 
 void uiViewShowBatteryPercentage(const char *text);
 
@@ -43,10 +53,13 @@ void uiViewShowBottomRightButton(const char *text);
 
 void uiViewSetBrightness(const uint8_t percentage);
 
+/** Request that the UIView tells the screen to refresh at its earliest convenience */
 void uiViewRequestUpdate();
 
+/** Force screen to refresh, use only when needed, use uiViewRequestUpdate() for all other cases */
 void uiViewForceUpdate();
 
+/** Called once during the main loop */
 void uiViewLoop();
 
 // battery percentage at top left

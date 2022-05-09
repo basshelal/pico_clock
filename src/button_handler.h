@@ -14,14 +14,25 @@ typedef enum {
     A, B, X, Y
 } Button;
 
-typedef void (*ButtonChangedCallback)(const Button button, const bool buttonOn);
+struct ButtonState;
+
+typedef void (*ButtonChangedCallback)(const struct ButtonState *const buttonState);
 typedef void (*ButtonHeldCallback)(const Button button, const uint32_t cyclesHeld, const uint64_t millisHeld);
 
+typedef struct ButtonState {
+    const Button button;
+    bool isOn;
+    int millisHeld;
+    ButtonChangedCallback changedCallback;
+    ButtonHeldCallback heldCallback;
+} ButtonState;
+
+extern ButtonState buttonStateA;
+extern ButtonState buttonStateB;
+extern ButtonState buttonStateX;
+extern ButtonState buttonStateY;
+
 void buttonHandlerInit();
-
-void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCallback *const callback);
-
-void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback *const callback);
 
 void buttonHandlerLoop();
 

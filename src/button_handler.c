@@ -1,40 +1,45 @@
 #include "button_handler.h"
 
-typedef struct ButtonState {
-    const Button button;
-    bool isOn;
-    int millisHeld;
-    ButtonChangedCallback *changedCallback;
-    ButtonHeldCallback *heldCallback;
-} ButtonState;
-
-static ButtonState stateA = {.button = A_BUTTON_PIN};
-static ButtonState stateB = {.button = B_BUTTON_PIN};
-static ButtonState stateX = {.button = X_BUTTON_PIN};
-static ButtonState stateY = {.button = Y_BUTTON_PIN};
+ButtonState buttonStateA = {.button = A_BUTTON_PIN};
+ButtonState buttonStateB = {.button = B_BUTTON_PIN};
+ButtonState buttonStateX = {.button = X_BUTTON_PIN};
+ButtonState buttonStateY = {.button = Y_BUTTON_PIN};
 
 static inline void handleStateChanged(ButtonState *const state) {
     if (!state) return;
     state->isOn = !gpio_get(state->button);
-    if (state->changedCallback && (*state->changedCallback)) {
-        (*state->changedCallback)(state->button, state->isOn);
+    if (state->changedCallback) {
+        (state->changedCallback)(state);
     }
 }
 
 static void handleCallback(const uint gpio, const uint32_t event) {
     switch (gpio) {
         case A_BUTTON_PIN:
-            handleStateChanged(&stateA);
+            handleStateChanged(&buttonStateA);
             break;
         case B_BUTTON_PIN:
-            handleStateChanged(&stateB);
+            handleStateChanged(&buttonStateB);
             break;
         case X_BUTTON_PIN:
-            handleStateChanged(&stateX);
+            handleStateChanged(&buttonStateX);
             break;
         case Y_BUTTON_PIN:
-            handleStateChanged(&stateY);
+            handleStateChanged(&buttonStateY);
             break;
+    }
+}
+
+static inline void handleHeld(ButtonState *const state) {
+    if (!state) return;
+    if (state->isOn) {
+        state->millisHeld += MILLIS_PER_CYCLE_MAIN_CORE;
+        if (state->millisHeld > 0 && state->heldCallback) {
+            (state->heldCallback)(state->button, state->millisHeld / MILLIS_PER_CYCLE_MAIN_CORE,
+                                  state->millisHeld);
+        }
+    } else {
+        state->millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
     }
 }
 
@@ -61,61 +66,15 @@ void buttonHandlerInit() {
     gpio_set_irq_enabled_with_callback(Y_BUTTON_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, handleCallback);
 
     // Skip 1 cycle before a hold is triggered, otherwise a single press will count as a short hold
-    stateA.millisHeld = -MAIN_CORE_CYCLE;
-    stateB.millisHeld = -MAIN_CORE_CYCLE;
-    stateX.millisHeld = -MAIN_CORE_CYCLE;
-    stateY.millisHeld = -MAIN_CORE_CYCLE;
-}
-
-void buttonHandlerSetChangedCallback(const Button button, const ButtonChangedCallback *const callback) {
-    switch (button) {
-        case A:
-            stateA.changedCallback = callback;
-            break;
-        case B:
-            stateB.changedCallback = callback;
-            break;
-        case X:
-            stateX.changedCallback = callback;
-            break;
-        case Y:
-            stateY.changedCallback = callback;
-            break;
-    }
-}
-
-void buttonHandlerSetHeldCallback(const Button button, const ButtonHeldCallback *const callback) {
-    switch (button) {
-        case A:
-            stateA.heldCallback = callback;
-            break;
-        case B:
-            stateB.heldCallback = callback;
-            break;
-        case X:
-            stateX.heldCallback = callback;
-            break;
-        case Y:
-            stateY.heldCallback = callback;
-            break;
-    }
-}
-
-static inline void handleHeld(ButtonState *const state) {
-    if (!state) return;
-    if (state->isOn) {
-        state->millisHeld += MAIN_CORE_CYCLE;
-        if (state->millisHeld > 0 && state->heldCallback && (*state->heldCallback)) {
-            (*state->heldCallback)(state->button, state->millisHeld / MAIN_CORE_CYCLE, state->millisHeld);
-        }
-    } else {
-        state->millisHeld = -MAIN_CORE_CYCLE;
-    }
+    buttonStateA.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
+    buttonStateB.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
+    buttonStateX.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
+    buttonStateY.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
 }
 
 void buttonHandlerLoop() {
-    handleHeld(&stateA);
-    handleHeld(&stateB);
-    handleHeld(&stateX);
-    handleHeld(&stateY);
+    handleHeld(&buttonStateA);
+    handleHeld(&buttonStateB);
+    handleHeld(&buttonStateX);
+    handleHeld(&buttonStateY);
 }

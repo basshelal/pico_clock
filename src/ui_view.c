@@ -85,10 +85,6 @@ static Rectangle bottomRightButtonRect = {
         .h=height
 };
 
-void uiViewClear() {
-    displayClear();
-}
-
 static inline void uiSetRectangle(const Rectangle rectangle, Color color) {
     displaySetColor(color);
     displaySetRectangle(rectangle);
@@ -115,15 +111,27 @@ static inline void loopUICore() {
 static void launchUICore() {
     while (true) {
         loopUICore();
-        sleep_ms(UI_CORE_CYCLE);
+        sleep_ms(MILLIS_PER_CYCLE_UI_CORE);
     }
+}
+
+void uiViewClearAll() {
+    displayClear();
+}
+
+void uiViewClearDetails() {
+    uiViewShowTopLeftButton(NULL);
+    uiViewShowBottomLeftButton(NULL);
+    uiViewShowTopRightButton(NULL);
+    uiViewShowBottomRightButton(NULL);
+    uiViewShowMessage(NULL);
 }
 
 void uiViewInit() {
     buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
     displayInit(buffer);
     displaySetColor(WHITE);
-    uiViewClear();
+    uiViewClearAll();
 
     multicore_launch_core1(&launchUICore);
     uiViewRequestUpdate();

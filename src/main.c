@@ -48,11 +48,11 @@ static void updateText() {
 
 static void setup() {
     set_sys_clock_48mhz(); // as low as we can reliably go, we do this to save power
+    stdio_usb_init();
+
     onLight();
 
-    uiViewInit();
     uiControllerInit();
-    stdio_usb_init();
 
     rtcInit();
     if (!rtcIsRunning()) rtcSetIsRunning(true);
@@ -73,7 +73,7 @@ int main() {
     setup();
     while (true) {
         loop();
-        sleep_ms(MAIN_CORE_CYCLE);
+        sleep_ms(MILLIS_PER_CYCLE_MAIN_CORE);
         finishCycle();
     }
 }
