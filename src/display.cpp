@@ -1,7 +1,7 @@
 #include "display.h"
 #include "pico_graphics.hpp"
 #include "pico_display_2.hpp"
-#include "custom_font.hpp"
+#include <font8_data.hpp>
 #include "utils.h"
 
 using namespace pimoroni;
@@ -12,7 +12,7 @@ void displayInit(uint16_t *const buffer) {
     display = PicoDisplay2(buffer);
     display.init();
     displayClear();
-    display.set_font(&custom_font);
+    display.set_font(&font8);
 }
 
 void displayClear() {
@@ -44,7 +44,7 @@ void displaySetRectangle(const Rectangle rectangle) {
 }
 
 uint8_t displayGetCharWidth(const char c) {
-    return custom_font.widths[get_font_index_for_char(c)];
+    return font8.widths[get_font_index_for_char(c)];
 }
 
 int displayGetStringWidth(const char *string) {

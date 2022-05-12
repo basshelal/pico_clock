@@ -18,7 +18,6 @@ pico_sdk_init()
 add_executable(${NAME}
         src/main.c
         src/constants.h
-        src/custom_font.hpp
         src/rtc.h src/rtc.c
         src/battery.h src/battery.c
         src/utils.h src/utils.c
@@ -29,6 +28,7 @@ add_executable(${NAME}
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)
+include(libraries/bitmap_fonts/bitmap_fonts)
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(${NAME}
