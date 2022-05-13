@@ -36,8 +36,7 @@ private inline void handleHeld(ButtonState *const state) {
     if (state->isOn) {
         state->millisHeld += MILLIS_PER_CYCLE_MAIN_CORE;
         if (state->millisHeld > 0 && state->heldCallback) {
-            (state->heldCallback)(state->button, state->millisHeld / MILLIS_PER_CYCLE_MAIN_CORE,
-                                  state->millisHeld);
+            (state->heldCallback)(state);
         }
     } else {
         state->millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;

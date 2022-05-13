@@ -43,7 +43,7 @@ void uiView_showMessage(const char *text);
 
 void uiView_showTopLeftButton(const char *text);
 
-void uiView_showColoredTopLeftButton(const char *text, const Color textColor);
+void uiView_showTopLeftButtonColored(const char *text, const Color textColor);
 
 void uiView_showBottomLeftButton(const char *text);
 

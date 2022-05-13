@@ -112,6 +112,20 @@ public const Color GREEN = {.r = 0, .g = 255, .b = 0};
 public const Color BLUE = {.r = 0, .g = 0, .b = 255};
 public const Color YELLOW = {.r = 255, .g = 255, .b = 0};
 
+#define TEXT_COLOR WHITE
+
+public void uiView_init() {
+    buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
+    display_init(buffer);
+    display_setColor(WHITE);
+    display_setBacklight(100);
+    uiView_clearAll();
+
+    multicore_launch_core1(&uiView_launchUICore);
+    uiView_requestUpdate();
+    uiView_setBrightness(100);
+}
+
 public void uiView_clearAll() {
     display_clear();
 }
@@ -124,21 +138,11 @@ public void uiView_clearDetails() {
     uiView_showMessage(NULL);
 }
 
-public void uiView_init() {
-    buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
-    display_init(buffer);
-    display_setColor(WHITE);
-    uiView_clearAll();
-
-    multicore_launch_core1(&uiView_launchUICore);
-    uiView_requestUpdate();
-    uiView_setBrightness(100);
-}
-
 public void uiView_showBatteryPercentage(const char *text) {
     uiView_clearRectangle(batteryRectangle);
     if (text != NULL) {
         batteryRectangle.w = display_getStringWidth(text, batteryTextScale);
+        display_setColor(TEXT_COLOR);
         display_setText(text, batteryRectangle.x, batteryRectangle.y,
                         DISPLAY_WIDTH - outsideMargin, batteryTextScale);
     }
@@ -149,7 +153,7 @@ public void uiView_showClock(const char *text) {
     if (text != NULL) {
         clockRect.w = display_getStringWidth(text, clockTextScale);
         clockRect.x = (DISPLAY_WIDTH / 2) - (clockRect.w / 2);
-        display_setColor(WHITE);
+        display_setColor(TEXT_COLOR);
         display_setText(text, clockRect.x, clockRect.y,
                         DISPLAY_WIDTH - outsideMargin, clockTextScale);
     }
@@ -160,6 +164,7 @@ public void uiView_showDate(const char *text) {
     if (text) {
         dateRect.w = display_getStringWidth(text, dateTextScale);
         dateRect.x = (DISPLAY_WIDTH / 2) - (dateRect.w / 2);
+        display_setColor(TEXT_COLOR);
         display_setText(text, dateRect.x, dateRect.y,
                         DISPLAY_WIDTH - outsideMargin, dateTextScale);
     }
@@ -177,12 +182,13 @@ public void uiView_showMessage(const char *text) {
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         messageRect.h = (lines * charHeight * messageTextScale) + (lineBreaks * messageTextScale);
+        display_setColor(TEXT_COLOR);
         display_setText(text, messageRect.x, messageRect.y,
                         wrapWidth, messageTextScale);
     }
 }
 
-public void uiView_showColoredTopLeftButton(const char *text, const Color textColor) {
+public void uiView_showTopLeftButtonColored(const char *text, const Color textColor) {
     uiView_clearRectangle(topLeftButtonRect);
     if (text != NULL) {
         const int fullLineWidth = display_getStringWidth(text, buttonTextScale);
@@ -200,7 +206,7 @@ public void uiView_showColoredTopLeftButton(const char *text, const Color textCo
 }
 
 public void uiView_showTopLeftButton(const char *text) {
-    uiView_showColoredTopLeftButton(text, WHITE);
+    uiView_showTopLeftButtonColored(text, TEXT_COLOR);
 }
 
 public void uiView_showBottomLeftButton(const char *text) {
@@ -213,6 +219,7 @@ public void uiView_showBottomLeftButton(const char *text) {
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         bottomLeftButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
+        display_setColor(TEXT_COLOR);
         display_setText(text, bottomLeftButtonRect.x, bottomLeftButtonRect.y,
                         wrapWidth, buttonTextScale);
     }
@@ -229,6 +236,7 @@ public void uiView_showTopRightButton(const char *text) {
         const uint8_t lineBreaks = lines - 1;
         topRightButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
         topRightButtonRect.x = lines <= 1 ? (DISPLAY_WIDTH - lineWidth) : rightX;
+        display_setColor(TEXT_COLOR);
         display_setText(text, topRightButtonRect.x, topRightButtonRect.y,
                         wrapWidth, buttonTextScale);
     }
@@ -245,6 +253,7 @@ public void uiView_showBottomRightButton(const char *text) {
         const uint8_t lineBreaks = lines - 1;
         bottomRightButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
         bottomRightButtonRect.x = lines <= 1 ? (DISPLAY_WIDTH - lineWidth) : rightX;
+        display_setColor(TEXT_COLOR);
         display_setText(text, bottomRightButtonRect.x, bottomRightButtonRect.y,
                         wrapWidth, buttonTextScale);
     }

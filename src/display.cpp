@@ -7,6 +7,7 @@
 using namespace pimoroni;
 
 private PicoDisplay2 display = NULL;
+private uint8_t brightnessPercentage;
 
 public void display_init(uint16_t *const buffer) {
     display = PicoDisplay2(buffer);
@@ -39,9 +40,15 @@ public void display_setRectangle(const Rectangle rectangle) {
 }
 
 public void display_setBacklight(const uint8_t percentage) {
+    if (percentage < 0 || percentage > 100) return;
     const float factor = percentage > 100 ? 1.0F : ((float) percentage) / 100.0F;
     const uint8_t brightness = factor == 0.0F ? 0 : (uint8_t) (255.0F * factor);
     display.set_backlight(brightness);
+    brightnessPercentage = percentage;
+}
+
+public uint8_t display_getBacklight() {
+    return brightnessPercentage;
 }
 
 public int display_getStringWidth(const char *string, const int scale) {

@@ -40,6 +40,8 @@ void display_setRectangle(const Rectangle rectangle);
 
 void display_setBacklight(const uint8_t percentage);
 
+uint8_t display_getBacklight();
+
 int display_getStringWidth(const char *string, const int scale);
 
 Color display_getRandomColor();

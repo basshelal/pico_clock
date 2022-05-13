@@ -17,7 +17,7 @@ typedef enum {
 struct ButtonState;
 
 typedef void (*ButtonChangedCallback)(const struct ButtonState *const buttonState);
-typedef void (*ButtonHeldCallback)(const Button button, const uint32_t cyclesHeld, const uint64_t millisHeld);
+typedef void (*ButtonHeldCallback)(const struct ButtonState *const buttonState);
 
 typedef struct ButtonState {
     const Button button;
