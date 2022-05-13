@@ -25,42 +25,42 @@ extern const Color BLUE;
 extern const Color YELLOW;
 
 /** Call once before UIView use */
-void uiViewInit();
+void uiView_init();
 
 /** Clears the entire UI */
-void uiViewClearAll();
+void uiView_clearAll();
 
 /** Clears the details of the UI, leaving the core UI elements, the clock and date */
-void uiViewClearDetails();
+void uiView_clearDetails();
 
-void uiViewShowBatteryPercentage(const char *text);
+void uiView_showBatteryPercentage(const char *text);
 
-void uiViewShowClock(const char *text);
+void uiView_showClock(const char *text);
 
-void uiViewShowDate(const char *text);
+void uiView_showDate(const char *text);
 
-void uiViewShowMessage(const char *text);
+void uiView_showMessage(const char *text);
 
-void uiViewShowTopLeftButton(const char *text);
+void uiView_showTopLeftButton(const char *text);
 
-void uiViewShowColoredTopLeftButton(const char *text, const Color textColor);
+void uiView_showColoredTopLeftButton(const char *text, const Color textColor);
 
-void uiViewShowBottomLeftButton(const char *text);
+void uiView_showBottomLeftButton(const char *text);
 
-void uiViewShowTopRightButton(const char *text);
+void uiView_showTopRightButton(const char *text);
 
-void uiViewShowBottomRightButton(const char *text);
+void uiView_showBottomRightButton(const char *text);
 
-void uiViewSetBrightness(const uint8_t percentage);
+void uiView_setBrightness(const uint8_t percentage);
 
 /** Request that the UIView tells the screen to refresh at its earliest convenience */
-void uiViewRequestUpdate();
+void uiView_requestUpdate();
 
-/** Force screen to refresh, use only when needed, use uiViewRequestUpdate() for all other cases */
-void uiViewForceUpdate();
+/** Force screen to refresh, use only when needed, use uiView_requestUpdate() for all other cases */
+void uiView_forceUpdate();
 
 /** Called once during the main loop */
-void uiViewLoop();
+void uiView_loop();
 
 // battery percentage at top left
 // middle large clock

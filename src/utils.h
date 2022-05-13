@@ -16,6 +16,9 @@ extern "C" {
 #define log(fmt, args...) /* Don't do anything in release builds */
 #endif
 
+#define private static
+#define public
+
 uint64_t getCyclesPassed();
 
 void finishCycle();
@@ -35,7 +38,7 @@ inline void clear_console() {
  * @param x the byte to convert
  * @return a string with the binary representation of x
  */
-const char *byte_to_binary(const uint8_t x);
+const char *byteToBinary(const uint8_t x);
 
 /**
  * Reverses the bits in the number n, used to convert between least-significant-bit first and most-significant-bit first
@@ -134,8 +137,6 @@ inline uint8_t set_bits(const uint8_t value, const uint8_t fromBit, const uint8_
 
     return result;
 }
-
-uint8_t get_font_index_for_char(const char c);
 
 inline uint64_t secondsToCycles(float seconds) {
     const float cyclesPerSecond = (1000.0F / (float) MILLIS_PER_CYCLE_MAIN_CORE);

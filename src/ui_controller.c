@@ -1,6 +1,6 @@
 #include "ui_controller.h"
 
-static struct {
+private struct {
     bool isShowing;
     uint64_t millisSinceLastPress;
     bool countingMillisSinceLastPress;
@@ -10,9 +10,9 @@ static struct {
     int pressCountA;
 } state;
 
-char buffer[512];
+private char buffer[512];
 
-static void changedCallbackButtonA(const ButtonState *const buttonState) {
+private void changedCallbackButtonA(const ButtonState *const buttonState) {
     if (state.isShowing) {
         if (buttonState->isOn) {
             state.countingMillisSinceLastPress = true;
@@ -20,9 +20,9 @@ static void changedCallbackButtonA(const ButtonState *const buttonState) {
             state.pressCountA++;
 
             snprintf(buffer, 512, "Pressed A %i times", state.pressCountA);
-            uiViewShowMessage(buffer);
+            uiView_showMessage(buffer);
 
-            uiViewRequestUpdate();
+            uiView_requestUpdate();
         }
     } else if (!state.isShowing) {
         if (buttonState->isOn) {
@@ -31,26 +31,26 @@ static void changedCallbackButtonA(const ButtonState *const buttonState) {
             state.pressCountA++;
 
             state.isShowing = true;
-            uiViewShowTopLeftButton("A");
+            uiView_showTopLeftButton("A");
 
             snprintf(buffer, 512, "Pressed A %i times", state.pressCountA);
-            uiViewShowMessage(buffer);
+            uiView_showMessage(buffer);
 
-            uiViewRequestUpdate();
+            uiView_requestUpdate();
         }
     }
 }
 
-void uiControllerInit() {
-    uiViewInit();
-    buttonHandlerInit();
+public void uiController_init() {
+    uiView_init();
+    buttonHandler_init();
 
     buttonStateA.changedCallback = changedCallbackButtonA;
 }
 
-void uiControllerLoop() {
-    buttonHandlerLoop();
-    uiViewLoop();
+public void uiController_loop() {
+    buttonHandler_loop();
+    uiView_loop();
 
     if (state.countingMillisSinceLastPress) {
         state.millisSinceLastPress += MILLIS_PER_CYCLE_MAIN_CORE;
@@ -60,7 +60,7 @@ void uiControllerLoop() {
         state.millisSinceLastPress = 0;
 
         state.isShowing = false;
-        uiViewClearDetails();
+        uiView_clearDetails();
 
         state.pressCountA = 0;
     }

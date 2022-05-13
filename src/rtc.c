@@ -10,12 +10,23 @@
 #define REG_YEAR 0x06
 #define REG_CONTROL 0x0E
 #define REG_STATUS 0x0F
-
 #define I2C_TIMEOUT_US 5000
 
-static uint32_t rtcBaudrate;
+private uint32_t rtcBaudrate;
 
-inline bool dateTimeEquals(const DateTime *a, const DateTime *b) {
+private uint8_t readRegister(const uint8_t reg) {
+    uint8_t readValue;
+    i2c_write_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, &reg, 1, true, I2C_TIMEOUT_US);
+    i2c_read_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, &readValue, 1, false, I2C_TIMEOUT_US);
+    return readValue;
+}
+
+private void writeRegister(const uint8_t reg, const uint8_t value) {
+    const uint8_t array[2] = {reg, value};
+    i2c_write_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, array, 2, false, I2C_TIMEOUT_US);
+}
+
+public inline bool rtc_dateTimeEquals(const DateTime *a, const DateTime *b) {
     if (!a && !b) return true;
     if (!a || !b) return false;
     return a->seconds == b->seconds &&
@@ -27,7 +38,7 @@ inline bool dateTimeEquals(const DateTime *a, const DateTime *b) {
            a->year == b->year;
 }
 
-inline const char *weekdayToString(const WeekDay weekDay) {
+public inline const char *rtc_weekdayToString(const WeekDay weekDay) {
     switch (weekDay) {
         case MONDAY:
             return "Mon";
@@ -48,7 +59,7 @@ inline const char *weekdayToString(const WeekDay weekDay) {
     }
 }
 
-inline const char *monthToString(const uint8_t month) {
+public inline const char *rtc_monthToString(const uint8_t month) {
     const uint8_t clampedMonth = (month < 1 || month > 12) ? 1 : month;
     switch (clampedMonth) {
         case 1:
@@ -80,19 +91,7 @@ inline const char *monthToString(const uint8_t month) {
     }
 }
 
-static uint8_t readRegister(const uint8_t reg) {
-    uint8_t readValue;
-    i2c_write_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, &reg, 1, true, I2C_TIMEOUT_US);
-    i2c_read_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, &readValue, 1, false, I2C_TIMEOUT_US);
-    return readValue;
-}
-
-static void writeRegister(const uint8_t reg, const uint8_t value) {
-    const uint8_t array[2] = {reg, value};
-    i2c_write_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, array, 2, false, I2C_TIMEOUT_US);
-}
-
-void rtcInit() {
+public void rtc_init() {
     gpio_set_function(RTC_SCLK_PIN, GPIO_FUNC_I2C);
     gpio_set_function(RTC_SDA_PIN, GPIO_FUNC_I2C);
     gpio_pull_up(RTC_SCLK_PIN);
@@ -100,27 +99,27 @@ void rtcInit() {
     rtcBaudrate = i2c_init(RTC_I2C, RTC_BAUD_RATE);
 }
 
-bool rtcIsRunning() {
-    return !rtcIsErrored() && rtcIsBatteryEnabled();
+public bool rtc_isRunning() {
+    return !rtc_isErrored() && rtc_isBatteryEnabled();
 }
 
-bool rtcIsErrored() {
+public bool rtc_isErrored() {
     const uint8_t rawStatus = readRegister(REG_STATUS);
     // first bit is reserved for OSC stop flag, 0 if ok, 1 if stopped
     bool isHalted = get_bits(rawStatus, 0, 0);
     return isHalted;
 }
 
-bool rtcIsBatteryEnabled() {
+public bool rtc_isBatteryEnabled() {
     const uint8_t rawControl = readRegister(REG_CONTROL);
     // first bit is reserved for OSC enable (during battery power), 0 if ok, 1 if stopped
     bool oscStoppedOnBattery = get_bits(rawControl, 0, 0);
     return !oscStoppedOnBattery;
 }
 
-uint32_t rtcGetBaudRate() { return rtcBaudrate; }
+public uint32_t rtc_getBaudRate() { return rtcBaudrate; }
 
-uint8_t rtcGetSeconds() {
+public uint8_t rtc_getSeconds() {
     const uint8_t rawSeconds = readRegister(REG_SECONDS);
 
     // first bit is unused
@@ -135,7 +134,7 @@ uint8_t rtcGetSeconds() {
     return seconds;
 }
 
-uint8_t rtcGetMinutes() {
+public uint8_t rtc_getMinutes() {
     const uint8_t rawMinutes = readRegister(REG_MINUTES);
 
     // first bit is unused
@@ -150,7 +149,7 @@ uint8_t rtcGetMinutes() {
     return minutes;
 }
 
-uint8_t rtcGetHours() {
+public uint8_t rtc_getHours() {
     const uint8_t rawHours = readRegister(REG_HOURS);
     // bit 1 is 12/24 mode, if 1 then in 12hr mode, if 0 then in 24hr mode
     const bool hoursMode = get_bits(rawHours, 1, 1);
@@ -178,7 +177,7 @@ uint8_t rtcGetHours() {
     return hours;
 }
 
-WeekDay rtcGetWeekday() {
+public WeekDay rtc_getWeekday() {
     const uint8_t rawWeekday = readRegister(REG_WEEKDAY);
     // first 5 bits are unused
 
@@ -187,7 +186,7 @@ WeekDay rtcGetWeekday() {
     return (WeekDay) weekday;
 }
 
-uint8_t rtcGetDate() {
+public uint8_t rtc_getDate() {
     const uint8_t rawDate = readRegister(REG_DATE);
     // first 2 bits are blank/ignored
 
@@ -201,7 +200,7 @@ uint8_t rtcGetDate() {
     return date;
 }
 
-uint8_t rtcGetMonth() {
+public uint8_t rtc_getMonth() {
     const uint8_t rawMonth = readRegister(REG_MONTH);
     // first bit is for century which we won't use
 
@@ -215,7 +214,7 @@ uint8_t rtcGetMonth() {
     return month;
 }
 
-uint8_t rtcGetYear() {
+public uint8_t rtc_getYear() {
     const uint8_t rawYear = readRegister(REG_YEAR);
     // first 4 bits are the year tens part (like if 22 then 2, or if 5 then 0)
     const uint8_t yearTens = get_bits(rawYear, 0, 3);
@@ -227,41 +226,41 @@ uint8_t rtcGetYear() {
     return year;
 }
 
-void rtcGetDateTime(DateTime *const result) {
+public void rtc_getDateTime(DateTime *const result) {
     if (!result) return;
-    result->seconds = rtcGetSeconds();
-    result->minutes = rtcGetMinutes();
-    result->hours = rtcGetHours();
-    result->weekDay = rtcGetWeekday();
-    result->date = rtcGetDate();
-    result->month = rtcGetMonth();
-    result->year = rtcGetYear();
+    result->seconds = rtc_getSeconds();
+    result->minutes = rtc_getMinutes();
+    result->hours = rtc_getHours();
+    result->weekDay = rtc_getWeekday();
+    result->date = rtc_getDate();
+    result->month = rtc_getMonth();
+    result->year = rtc_getYear();
 }
 
-void rtcSetIsRunning(const bool isRunning) {
-    rtcSetIsErrored(!isRunning);
-    rtcSetIsBatteryEnabled(isRunning);
+public void rtc_setIsRunning(const bool isRunning) {
+    rtc_setIsErrored(!isRunning);
+    rtc_setIsBatteryEnabled(isRunning);
 }
 
-void rtcSetIsErrored(const bool isErrored) {
+public void rtc_setIsErrored(const bool isErrored) {
     const uint8_t rawStatus = readRegister(REG_STATUS);
     // first bit is reserved for OSC stop flag, 0 if ok, 1 if stopped
     const uint8_t value = set_bits(rawStatus, 0, 0, isErrored);
     writeRegister(REG_STATUS, value);
 }
 
-void rtcSetIsBatteryEnabled(const bool isBatteryEnabled) {
+public void rtc_setIsBatteryEnabled(const bool isBatteryEnabled) {
     const uint8_t rawControl = readRegister(REG_CONTROL);
     // first bit is reserved for OSC enable (during battery power), 0 if ok, 1 if stopped
     const uint8_t value = set_bits(rawControl, 0, 0, isBatteryEnabled);
     writeRegister(REG_STATUS, value);
 }
 
-void rtcSetBaudRate(const uint32_t baudrate) {
+public void rtc_setBaudRate(const uint32_t baudrate) {
     rtcBaudrate = i2c_set_baudrate(RTC_I2C, baudrate);
 }
 
-void rtcSetSeconds(const uint8_t seconds) {
+public void rtc_setSeconds(const uint8_t seconds) {
     const uint8_t clampedSeconds = (seconds < 0 || seconds > 59) ? 0 : seconds;
     // if user gave seconds out of range, set it to 0
 
@@ -280,7 +279,7 @@ void rtcSetSeconds(const uint8_t seconds) {
     writeRegister(REG_SECONDS, value);
 }
 
-void rtcSetMinutes(const uint8_t minutes) {
+public void rtc_setMinutes(const uint8_t minutes) {
     const uint8_t clampedMinutes = (minutes < 0 || minutes > 59) ? 0 : minutes;
     // if user gave minutes out of range, set it to 0
 
@@ -296,7 +295,7 @@ void rtcSetMinutes(const uint8_t minutes) {
     writeRegister(REG_MINUTES, value);
 }
 
-void rtcSetHours(const uint8_t hours) {
+public void rtc_setHours(const uint8_t hours) {
     const uint8_t clampedHours = (hours < 0 || hours > 23) ? 0 : hours;
     // if user gave hours out of range, set it to 0
 
@@ -315,7 +314,7 @@ void rtcSetHours(const uint8_t hours) {
     writeRegister(REG_HOURS, value);
 }
 
-void rtcSetWeekday(const WeekDay weekday) {
+public void rtc_setWeekday(const WeekDay weekday) {
     const WeekDay clampedWeekday = (weekday < 1 || weekday > 7) ? MONDAY : weekday;
     // if user gave weekday out of range, set it to Monday (1)
 
@@ -325,7 +324,7 @@ void rtcSetWeekday(const WeekDay weekday) {
     writeRegister(REG_WEEKDAY, value);
 }
 
-void rtcSetDate(const uint8_t date) {
+public void rtc_setDate(const uint8_t date) {
     const uint8_t clampedDate = (date < 1 || date > 31) ? 1 : date;
     // if user gave date out of range, set it to 1
 
@@ -341,7 +340,7 @@ void rtcSetDate(const uint8_t date) {
     writeRegister(REG_DATE, value);
 }
 
-void rtcSetMonth(const uint8_t month) {
+public void rtc_setMonth(const uint8_t month) {
     const uint8_t clampedMonth = (month < 1 || month > 12) ? 1 : month;
     // if user gave month out of range, set it to 1
 
@@ -357,7 +356,7 @@ void rtcSetMonth(const uint8_t month) {
     writeRegister(REG_MONTH, value);
 }
 
-void rtcSetYear(const uint8_t year) {
+public void rtc_setYear(const uint8_t year) {
     const uint8_t clampedYear = (year < 0 || year > 99) ? 0 : year;
     // if user gave year out of range, set it to 0
 
@@ -373,13 +372,13 @@ void rtcSetYear(const uint8_t year) {
     writeRegister(REG_YEAR, value);
 }
 
-void rtcSetDateTime(const DateTime *const dateTime) {
+public void rtc_setDateTime(const DateTime *const dateTime) {
     if (!dateTime) return;
-    rtcSetSeconds(dateTime->seconds);
-    rtcSetMinutes(dateTime->minutes);
-    rtcSetHours(dateTime->hours);
-    rtcSetWeekday(dateTime->weekDay);
-    rtcSetDate(dateTime->date);
-    rtcSetMonth(dateTime->month);
-    rtcSetYear(dateTime->year);
+    rtc_setSeconds(dateTime->seconds);
+    rtc_setMinutes(dateTime->minutes);
+    rtc_setHours(dateTime->hours);
+    rtc_setWeekday(dateTime->weekDay);
+    rtc_setDate(dateTime->date);
+    rtc_setMonth(dateTime->month);
+    rtc_setYear(dateTime->year);
 }

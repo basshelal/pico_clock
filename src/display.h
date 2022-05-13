@@ -26,23 +26,23 @@ typedef struct Color {
     uint8_t b;
 } Color;
 
-void displayInit(uint16_t *const buffer);
+void display_init(uint16_t *const buffer);
 
-void displayClear();
+void display_clear();
 
-void displaySetText(const char *text, const int32_t x, const int32_t y, const int32_t wrap, const uint8_t scale);
+void display_update();
 
-void displayUpdate();
+void display_setColor(const Color color);
 
-void displaySetBacklight(const uint8_t percentage);
+void display_setText(const char *text, const int32_t x, const int32_t y, const int32_t wrap, const uint8_t scale);
 
-void displaySetColor(const Color color);
+void display_setRectangle(const Rectangle rectangle);
 
-void displaySetRectangle(const Rectangle rectangle);
+void display_setBacklight(const uint8_t percentage);
 
-uint8_t displayGetCharWidth(const char c);
+int display_getStringWidth(const char *string, const int scale);
 
-int displayGetStringWidth(const char *string);
+Color display_getRandomColor();
 
 #ifdef __cplusplus
 }

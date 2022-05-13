@@ -1,101 +1,91 @@
 #include "ui_view.h"
 
-const Color WHITE = {.r = 255, .g = 255, .b = 255};
-const Color BLACK = {.r = 0, .g = 0, .b = 0};
-const Color RED = {.r = 255, .g = 0, .b = 0};
-const Color GREEN = {.r = 0, .g = 255, .b = 0};
-const Color BLUE = {.r = 0, .g = 0, .b = 255};
-const Color YELLOW = {.r = 255, .g = 255, .b = 0};
+private uint16_t *buffer;
 
-static uint16_t *buffer;
+private const uint8_t outsideMargin = 10;
+private const uint8_t charWidth = 6;
+private const uint8_t charHeight = 8;
 
-static const uint8_t outsideMargin = 10;
-static const uint8_t charWidth = 6;
-static const uint8_t charHeight = 8;
-static const uint8_t batteryTextScale = 1;
-
-static Rectangle batteryRectangle = {
+private const uint8_t batteryTextScale = 1;
+private Rectangle batteryRectangle = {
         .x=outsideMargin,
         .y=outsideMargin,
         .w=4 * charWidth * batteryTextScale,
         .h=batteryTextScale * charHeight
 };
 
-static const uint8_t clockTextScale = 6;
-
-static Rectangle clockRect = {
+private const uint8_t clockTextScale = 6;
+private Rectangle clockRect = {
         .x=outsideMargin * clockTextScale,
         .y=outsideMargin * 6,
         .w=6 * charWidth * clockTextScale,
         .h=1 * charHeight * clockTextScale
 };
 
-static const uint8_t dateTextScale = 2;
-
-static Rectangle dateRect = {
+private const uint8_t dateTextScale = 2;
+private Rectangle dateRect = {
         .x=outsideMargin * clockTextScale,
         .y=outsideMargin * 14,
         .w=12 * charWidth * dateTextScale,
         .h=1 * charHeight * dateTextScale};
 
-static const uint8_t messageTextScale = 2;
-
-static Rectangle messageRect = {
+private const uint8_t messageTextScale = 2;
+private Rectangle messageRect = {
         .x=outsideMargin * clockTextScale,
         .y=outsideMargin * 18,
         .w=12 * charWidth * messageTextScale,
         .h=3 * charHeight * messageTextScale};
 
-static const uint8_t buttonTextScale = 2;
+private const uint8_t buttonTextScale = 2;
 
-static const int32_t leftX = 0;
-static const int32_t rightX = DISPLAY_WIDTH - (4 * charWidth * buttonTextScale);
-static const int32_t topY = DISPLAY_HEIGHT / 6;
-static const int32_t bottomY = 4 * (DISPLAY_HEIGHT / 6);
-static const int32_t width = 4 * charWidth * buttonTextScale;
-static const int32_t height = 2 * charHeight * buttonTextScale;
+private const int32_t leftX = 0;
+private const int32_t rightX = DISPLAY_WIDTH - (4 * charWidth * buttonTextScale);
+private const int32_t topY = DISPLAY_HEIGHT / 6;
+private const int32_t bottomY = 4 * (DISPLAY_HEIGHT / 6);
+private const int32_t width = 4 * charWidth * buttonTextScale;
+private const int32_t height = 2 * charHeight * buttonTextScale;
 
-static const int wrapWidth = 4 * charWidth * buttonTextScale;
+private const int wrapWidth = 4 * charWidth * buttonTextScale;
 
-static Rectangle topLeftButtonRect = {
+private Rectangle topLeftButtonRect = {
         .x=leftX,
         .y=topY,
         .w=width,
         .h=height
 };
 
-static Rectangle topRightButtonRect = {
+private Rectangle topRightButtonRect = {
         .x=rightX,
         .y=topY,
         .w=width,
         .h=height
 };
 
-static Rectangle bottomLeftButtonRect = {
+private Rectangle bottomLeftButtonRect = {
         .x=leftX,
         .y=bottomY,
         .w=width,
         .h=height
 };
 
-static Rectangle bottomRightButtonRect = {
+private Rectangle bottomRightButtonRect = {
         .x=rightX,
         .y=bottomY,
         .w=width,
         .h=height
 };
 
-static inline void uiSetRectangle(const Rectangle rectangle, Color color) {
-    displaySetColor(color);
-    displaySetRectangle(rectangle);
-    displaySetColor(WHITE);
+private inline void uiView_setRectangle(const Rectangle rectangle, Color color) {
+    display_setColor(color);
+    display_setRectangle(rectangle);
+    display_setColor(WHITE);
 }
 
-static inline void uiClearRectangle(const Rectangle rectangle) {
-    uiSetRectangle(rectangle, BLACK);
+private inline void uiView_clearRectangle(const Rectangle rectangle) {
+    uiView_setRectangle(rectangle, BLACK);
 }
 
-static inline void loopUICore() {
+private inline void uiView_loopUICore() {
     int updateRequestCount = 0;
     while (multicore_fifo_rvalid()) {
         uint32_t data;
@@ -103,75 +93,83 @@ static inline void loopUICore() {
         if (data == REQUEST_UPDATE) updateRequestCount++;
     }
     if (updateRequestCount > 0) {
-        uiViewForceUpdate();
+        uiView_forceUpdate();
         printf("Update requests: %i\n", updateRequestCount);
     }
 }
 
-static void launchUICore() {
+private void uiView_launchUICore() {
     while (true) {
-        loopUICore();
+        uiView_loopUICore();
         sleep_ms(MILLIS_PER_CYCLE_UI_CORE);
     }
 }
 
-void uiViewClearAll() {
-    displayClear();
+public const Color WHITE = {.r = 255, .g = 255, .b = 255};
+public const Color BLACK = {.r = 0, .g = 0, .b = 0};
+public const Color RED = {.r = 255, .g = 0, .b = 0};
+public const Color GREEN = {.r = 0, .g = 255, .b = 0};
+public const Color BLUE = {.r = 0, .g = 0, .b = 255};
+public const Color YELLOW = {.r = 255, .g = 255, .b = 0};
+
+public void uiView_clearAll() {
+    display_clear();
 }
 
-void uiViewClearDetails() {
-    uiViewShowTopLeftButton(NULL);
-    uiViewShowBottomLeftButton(NULL);
-    uiViewShowTopRightButton(NULL);
-    uiViewShowBottomRightButton(NULL);
-    uiViewShowMessage(NULL);
+public void uiView_clearDetails() {
+    uiView_showTopLeftButton(NULL);
+    uiView_showBottomLeftButton(NULL);
+    uiView_showTopRightButton(NULL);
+    uiView_showBottomRightButton(NULL);
+    uiView_showMessage(NULL);
 }
 
-void uiViewInit() {
+public void uiView_init() {
     buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
-    displayInit(buffer);
-    displaySetColor(WHITE);
-    uiViewClearAll();
+    display_init(buffer);
+    display_setColor(WHITE);
+    uiView_clearAll();
 
-    multicore_launch_core1(&launchUICore);
-    uiViewRequestUpdate();
-    uiViewSetBrightness(100);
+    multicore_launch_core1(&uiView_launchUICore);
+    uiView_requestUpdate();
+    uiView_setBrightness(100);
 }
 
-void uiViewShowBatteryPercentage(const char *text) {
-    uiClearRectangle(batteryRectangle);
+public void uiView_showBatteryPercentage(const char *text) {
+    uiView_clearRectangle(batteryRectangle);
     if (text != NULL) {
-        batteryRectangle.w = (displayGetStringWidth(text) * batteryTextScale);
-        displaySetText(text, batteryRectangle.x, batteryRectangle.y,
-                       DISPLAY_WIDTH - outsideMargin, batteryTextScale);
+        batteryRectangle.w = display_getStringWidth(text, batteryTextScale);
+        display_setText(text, batteryRectangle.x, batteryRectangle.y,
+                        DISPLAY_WIDTH - outsideMargin, batteryTextScale);
     }
 }
 
-void uiViewShowClock(const char *text) {
-    uiClearRectangle(clockRect);
+public void uiView_showClock(const char *text) {
+    uiView_clearRectangle(clockRect);
     if (text != NULL) {
-        clockRect.w = (displayGetStringWidth(text) * clockTextScale);
+        clockRect.w = display_getStringWidth(text, clockTextScale);
         clockRect.x = (DISPLAY_WIDTH / 2) - (clockRect.w / 2);
-        displaySetText(text, clockRect.x, clockRect.y,
-                       DISPLAY_WIDTH - outsideMargin, clockTextScale);
+        display_setColor(WHITE);
+        display_setText(text, clockRect.x, clockRect.y,
+                        DISPLAY_WIDTH - outsideMargin, clockTextScale);
     }
 }
 
-void uiViewShowDate(const char *text) {
-    uiClearRectangle(dateRect);
+public void uiView_showDate(const char *text) {
+    uiView_clearRectangle(dateRect);
     if (text) {
-        dateRect.w = (displayGetStringWidth(text) * dateTextScale);
+        dateRect.w = display_getStringWidth(text, dateTextScale);
         dateRect.x = (DISPLAY_WIDTH / 2) - (dateRect.w / 2);
-        displaySetText(text, dateRect.x, dateRect.y,
-                       DISPLAY_WIDTH - outsideMargin, dateTextScale);
+        display_setText(text, dateRect.x, dateRect.y,
+                        DISPLAY_WIDTH - outsideMargin, dateTextScale);
     }
 }
 
-void uiViewShowMessage(const char *text) {
-    uiClearRectangle(messageRect);
+public void uiView_showMessage(const char *text) {
+    uiView_clearRectangle(messageRect);
     if (text != NULL) {
         const int wrapWidth = DISPLAY_WIDTH - (2 * 4 * charWidth * buttonTextScale);
-        const int fullLineWidth = (displayGetStringWidth(text) * messageTextScale);
+        const int fullLineWidth = display_getStringWidth(text, messageTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
         messageRect.w = lineWidth;
@@ -179,51 +177,51 @@ void uiViewShowMessage(const char *text) {
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         messageRect.h = (lines * charHeight * messageTextScale) + (lineBreaks * messageTextScale);
-        displaySetText(text, messageRect.x, messageRect.y,
-                       wrapWidth, messageTextScale);
+        display_setText(text, messageRect.x, messageRect.y,
+                        wrapWidth, messageTextScale);
     }
 }
 
-void uiViewShowColoredTopLeftButton(const char *text, const Color textColor) {
-    uiClearRectangle(topLeftButtonRect);
+public void uiView_showColoredTopLeftButton(const char *text, const Color textColor) {
+    uiView_clearRectangle(topLeftButtonRect);
     if (text != NULL) {
-        const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
+        const int fullLineWidth = display_getStringWidth(text, buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
         topLeftButtonRect.w = lineWidth;
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         topLeftButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
-        displaySetColor(textColor);
-        displaySetText(text, topLeftButtonRect.x, topLeftButtonRect.y,
-                       wrapWidth, buttonTextScale);
-        displaySetColor(WHITE);
+        display_setColor(textColor);
+        display_setText(text, topLeftButtonRect.x, topLeftButtonRect.y,
+                        wrapWidth, buttonTextScale);
+        display_setColor(WHITE);
     }
 }
 
-void uiViewShowTopLeftButton(const char *text) {
-    uiViewShowColoredTopLeftButton(text, WHITE);
+public void uiView_showTopLeftButton(const char *text) {
+    uiView_showColoredTopLeftButton(text, WHITE);
 }
 
-void uiViewShowBottomLeftButton(const char *text) {
-    uiClearRectangle(bottomLeftButtonRect);
+public void uiView_showBottomLeftButton(const char *text) {
+    uiView_clearRectangle(bottomLeftButtonRect);
     if (text != NULL) {
-        const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
+        const int fullLineWidth = display_getStringWidth(text, buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
         bottomLeftButtonRect.w = lineWidth;
         const uint8_t lines = (fullLineWidth + (wrapWidth - 1)) / wrapWidth;
         const uint8_t lineBreaks = lines - 1;
         bottomLeftButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
-        displaySetText(text, bottomLeftButtonRect.x, bottomLeftButtonRect.y,
-                       wrapWidth, buttonTextScale);
+        display_setText(text, bottomLeftButtonRect.x, bottomLeftButtonRect.y,
+                        wrapWidth, buttonTextScale);
     }
 }
 
-void uiViewShowTopRightButton(const char *text) {
-    uiClearRectangle(topRightButtonRect);
+public void uiView_showTopRightButton(const char *text) {
+    uiView_clearRectangle(topRightButtonRect);
     if (text != NULL) {
-        const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
+        const int fullLineWidth = display_getStringWidth(text, buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
         topRightButtonRect.w = lineWidth;
@@ -231,15 +229,15 @@ void uiViewShowTopRightButton(const char *text) {
         const uint8_t lineBreaks = lines - 1;
         topRightButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
         topRightButtonRect.x = lines <= 1 ? (DISPLAY_WIDTH - lineWidth) : rightX;
-        displaySetText(text, topRightButtonRect.x, topRightButtonRect.y,
-                       wrapWidth, buttonTextScale);
+        display_setText(text, topRightButtonRect.x, topRightButtonRect.y,
+                        wrapWidth, buttonTextScale);
     }
 }
 
-void uiViewShowBottomRightButton(const char *text) {
-    uiClearRectangle(bottomRightButtonRect);
+public void uiView_showBottomRightButton(const char *text) {
+    uiView_clearRectangle(bottomRightButtonRect);
     if (text != NULL) {
-        const int fullLineWidth = (displayGetStringWidth(text) * buttonTextScale);
+        const int fullLineWidth = display_getStringWidth(text, buttonTextScale);
         int lineWidth = fullLineWidth;
         if (lineWidth > wrapWidth) lineWidth = wrapWidth;
         bottomRightButtonRect.w = lineWidth;
@@ -247,23 +245,23 @@ void uiViewShowBottomRightButton(const char *text) {
         const uint8_t lineBreaks = lines - 1;
         bottomRightButtonRect.h = (lines * charHeight * buttonTextScale) + (lineBreaks * buttonTextScale);
         bottomRightButtonRect.x = lines <= 1 ? (DISPLAY_WIDTH - lineWidth) : rightX;
-        displaySetText(text, bottomRightButtonRect.x, bottomRightButtonRect.y,
-                       wrapWidth, buttonTextScale);
+        display_setText(text, bottomRightButtonRect.x, bottomRightButtonRect.y,
+                        wrapWidth, buttonTextScale);
     }
 }
 
-void uiViewSetBrightness(const uint8_t percentage) {
-    displaySetBacklight(percentage);
+public void uiView_setBrightness(const uint8_t percentage) {
+    display_setBacklight(percentage);
 }
 
-void uiViewRequestUpdate() {
+public void uiView_requestUpdate() {
     multicore_fifo_push_timeout_us(REQUEST_UPDATE, 5000);
 }
 
-void uiViewForceUpdate() {
-    displayUpdate();
+public void uiView_forceUpdate() {
+    display_update();
 }
 
-void uiViewLoop() {
+public void uiView_loop() {
 
 }

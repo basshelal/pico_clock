@@ -32,9 +32,9 @@ extern ButtonState buttonStateB;
 extern ButtonState buttonStateX;
 extern ButtonState buttonStateY;
 
-void buttonHandlerInit();
+void buttonHandler_init();
 
-void buttonHandlerLoop();
+void buttonHandler_loop();
 
 #ifdef __cplusplus
 }

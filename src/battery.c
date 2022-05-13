@@ -1,19 +1,109 @@
 // All code taken from https://www.waveshare.com/wiki/Pico-UPS-B
 // From the "resources" section of the wiki
 // Only minor non-functional changes made for better refactoring and
-// added batteryGetPercentage() function
+// added battery_getPercentage() function
 
+#include "utils.h"
 #include "battery.h"
 
-static float current_percentage;
-static bool current_is_charging;
-static uint8_t ina219_i2caddr;
-static uint32_t ina219_calValue;
+/** default I2C address **/
+#define INA219_ADDRESS (0x43)
+
+/** config register address **/
+#define INA219_REG_CONFIG (0x00)
+
+/** shunt voltage register **/
+#define INA219_REG_SHUNTVOLTAGE (0x01)
+
+/** bus voltage register **/
+#define INA219_REG_BUSVOLTAGE (0x02)
+
+/** power register **/
+#define INA219_REG_POWER (0x03)
+
+/** current register **/
+#define INA219_REG_CURRENT (0x04)
+
+/** calibration register **/
+#define INA219_REG_CALIBRATION (0x05)
+
+/** reset bit **/
+#define INA219_CONFIG_RESET (0x8000) // Reset Bit
+
+/** mask for bus voltage range **/
+#define INA219_CONFIG_BVOLTAGERANGE_MASK (0x2000) // Bus Voltage Range Mask
+
+/** bus voltage range values **/
+enum {
+    INA219_CONFIG_BVOLTAGERANGE_16V = (0x0000), // 0-16V Range
+    INA219_CONFIG_BVOLTAGERANGE_32V = (0x2000), // 0-32V Range
+};
+
+/** mask for gain bits **/
+#define INA219_CONFIG_GAIN_MASK (0x1800) // Gain Mask
+
+/** values for gain bits **/
+enum {
+    INA219_CONFIG_GAIN_1_40MV = (0x0000),  // Gain 1, 40mV Range
+    INA219_CONFIG_GAIN_2_80MV = (0x0800),  // Gain 2, 80mV Range
+    INA219_CONFIG_GAIN_4_160MV = (0x1000), // Gain 4, 160mV Range
+    INA219_CONFIG_GAIN_8_320MV = (0x1800), // Gain 8, 320mV Range
+};
+
+/** mask for bus ADC resolution bits **/
+#define INA219_CONFIG_BADCRES_MASK (0x0780)
+
+/** values for bus ADC resolution **/
+enum {
+    INA219_CONFIG_BADCRES_9BIT = (0x0000),  // 9-bit bus res = 0..511
+    INA219_CONFIG_BADCRES_10BIT = (0x0080), // 10-bit bus res = 0..1023
+    INA219_CONFIG_BADCRES_11BIT = (0x0100), // 11-bit bus res = 0..2047
+    INA219_CONFIG_BADCRES_12BIT = (0x0180), // 12-bit bus res = 0..4097
+};
+
+/** mask for shunt ADC resolution bits **/
+#define INA219_CONFIG_SADCRES_MASK                                             \
+  (0x0078) // Shunt ADC Resolution and Averaging Mask
+
+/** values for shunt ADC resolution **/
+enum {
+    INA219_CONFIG_SADCRES_9BIT_1S_84US = (0x0000),   // 1 x 9-bit shunt sample
+    INA219_CONFIG_SADCRES_10BIT_1S_148US = (0x0008), // 1 x 10-bit shunt sample
+    INA219_CONFIG_SADCRES_11BIT_1S_276US = (0x0010), // 1 x 11-bit shunt sample
+    INA219_CONFIG_SADCRES_12BIT_1S_532US = (0x0018), // 1 x 12-bit shunt sample
+    INA219_CONFIG_SADCRES_12BIT_2S_1060US = (0x0048), // 2 x 12-bit shunt samples averaged together
+    INA219_CONFIG_SADCRES_12BIT_4S_2130US = (0x0050), // 4 x 12-bit shunt samples averaged together
+    INA219_CONFIG_SADCRES_12BIT_8S_4260US = (0x0058), // 8 x 12-bit shunt samples averaged together
+    INA219_CONFIG_SADCRES_12BIT_16S_8510US = (0x0060), // 16 x 12-bit shunt samples averaged together
+    INA219_CONFIG_SADCRES_12BIT_32S_17MS = (0x0068), // 32 x 12-bit shunt samples averaged together
+    INA219_CONFIG_SADCRES_12BIT_64S_34MS = (0x0070), // 64 x 12-bit shunt samples averaged together
+    INA219_CONFIG_SADCRES_12BIT_128S_69MS = (0x0078), // 128 x 12-bit shunt samples averaged together
+};
+
+/** mask for operating mode bits **/
+#define INA219_CONFIG_MODE_MASK (0x0007) // Operating Mode Mask
+
+/** values for operating mode **/
+enum {
+    INA219_CONFIG_MODE_POWERDOWN,
+    INA219_CONFIG_MODE_SVOLT_TRIGGERED,
+    INA219_CONFIG_MODE_BVOLT_TRIGGERED,
+    INA219_CONFIG_MODE_SANDBVOLT_TRIGGERED,
+    INA219_CONFIG_MODE_ADCOFF,
+    INA219_CONFIG_MODE_SVOLT_CONTINUOUS,
+    INA219_CONFIG_MODE_BVOLT_CONTINUOUS,
+    INA219_CONFIG_MODE_SANDBVOLT_CONTINUOUS
+};
+
+private float current_percentage;
+private bool current_is_charging;
+private uint8_t ina219_i2caddr;
+private uint32_t ina219_calValue;
 
 // The following multipliers are used to convert raw current and power
 // values to mA and mW, taking into account the current config settings
-static uint32_t ina219_currentDivider_mA;
-static float ina219_powerMultiplier_mW;
+private uint32_t ina219_currentDivider_mA;
+private float ina219_powerMultiplier_mW;
 
 /*!
  *  @brief  Sends a single command byte over I2C
@@ -22,7 +112,7 @@ static float ina219_powerMultiplier_mW;
  *  @param  value
  *          value to write
  */
-static void wireWriteRegister(const uint8_t reg, const uint16_t value) {
+private void wireWriteRegister(const uint8_t reg, const uint16_t value) {
 
     uint8_t tmpi[3];
     tmpi[0] = reg;
@@ -39,7 +129,7 @@ static void wireWriteRegister(const uint8_t reg, const uint16_t value) {
  *  @param  *value
  *          read value
  */
-static void wireReadRegister(const uint8_t reg, uint16_t *value) {
+private void wireReadRegister(const uint8_t reg, uint16_t *value) {
 
     uint8_t tmpi[2];
 
@@ -55,7 +145,7 @@ static void wireReadRegister(const uint8_t reg, uint16_t *value) {
  *          occurs at 3.2A.
  *  @note   These calculations assume a 0.1 ohm resistor is present
  */
-static void setCalibration32V2A() {
+private void setCalibration32V2A() {
     // By default we use a pretty huge range for the input voltage,
     // which probably isn't the most appropriate choice for system
     // that don't use a lot of power.  But all of the calculations
@@ -139,7 +229,7 @@ static void setCalibration32V2A() {
  *  @param  on
  *          boolean value
  */
-static void powerSave(const bool on) {
+private void powerSave(const bool on) {
     uint16_t current;
     wireReadRegister(INA219_REG_CONFIG, &current);
     uint8_t next;
@@ -151,11 +241,40 @@ static void powerSave(const bool on) {
     wireWriteRegister(INA219_REG_CONFIG, next);
 }
 
+private bool isCharging() {
+    return battery_getShuntVoltageMilliVolts() >= 0.0F;
+}
+
+private bool isDischarging() {
+    return battery_getShuntVoltageMilliVolts() > 0.0F;
+}
+
+private bool isFullyCharged() {
+    return battery_getShuntVoltageMilliVolts() == 0.0F;
+}
+
+/*!
+ *  @brief  Setups the HW (defaults to 32V and 2A for calibration values)
+ *  @param theWire the TwoWire object to use
+ */
+public void battery_init() {
+    ina219_i2caddr = INA219_ADDRESS;
+    ina219_currentDivider_mA = 0;
+    ina219_powerMultiplier_mW = 0.0f;
+    i2c_init(BATTERY_I2C, BATTERY_BAUD_RATE);
+    gpio_set_function(BATTERY_SCLK_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(BATTERY_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(BATTERY_SCLK_PIN);
+    gpio_pull_up(BATTERY_SDA_PIN);
+    setCalibration32V2A();
+    powerSave(true);
+}
+
 /*!
  *  @brief  Gets the shunt voltage in mV (so +-327mV)
  *  @return the shunt voltage converted to millivolts
  */
-float batteryGetShuntVoltageMilliVolts() {
+public float battery_getShuntVoltageMilliVolts() {
     uint16_t value;
     wireReadRegister(INA219_REG_SHUNTVOLTAGE, &value);
     return (int16_t) value * 0.01;
@@ -165,7 +284,7 @@ float batteryGetShuntVoltageMilliVolts() {
  *  @brief  Gets the shunt voltage in volts
  *  @return the bus voltage converted to volts
  */
-float batteryGetBusVoltageVolts() {
+public float battery_getBusVoltageVolts() {
 
     uint16_t value;
     wireReadRegister(INA219_REG_BUSVOLTAGE, &value);
@@ -178,7 +297,7 @@ float batteryGetBusVoltageVolts() {
  *          config settings and current LSB
  *  @return the current reading convereted to milliamps
  */
-float batteryGetCurrentMilliAmps() {
+public float battery_getCurrentMilliAmps() {
     uint16_t value;
 
     // Sometimes a sharp load will reset the INA219, which will
@@ -199,7 +318,7 @@ float batteryGetCurrentMilliAmps() {
  *          config settings and current LSB
  *  @return power reading converted to milliwatts
  */
-float batteryGetPowerMilliWatts() {
+public float battery_getPowerMilliWatts() {
 
     uint16_t value;
 
@@ -217,42 +336,13 @@ float batteryGetPowerMilliWatts() {
     return valueDec;
 }
 
-static bool isCharging() {
-    return batteryGetShuntVoltageMilliVolts() >= 0.0F;
-}
-
-static bool isDischarging() {
-    return batteryGetShuntVoltageMilliVolts() > 0.0F;
-}
-
-static bool isFullyCharged() {
-    return batteryGetShuntVoltageMilliVolts() == 0.0F;
-}
-
-/*!
- *  @brief  Setups the HW (defaults to 32V and 2A for calibration values)
- *  @param theWire the TwoWire object to use
- */
-void batteryInit() {
-    ina219_i2caddr = INA219_ADDRESS;
-    ina219_currentDivider_mA = 0;
-    ina219_powerMultiplier_mW = 0.0f;
-    i2c_init(BATTERY_I2C, BATTERY_BAUD_RATE);
-    gpio_set_function(BATTERY_SCLK_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(BATTERY_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(BATTERY_SCLK_PIN);
-    gpio_pull_up(BATTERY_SDA_PIN);
-    setCalibration32V2A();
-    powerSave(true);
-}
-
-float batteryGetPercentage() {
+public float battery_getPercentage() {
     if (isFullyCharged()) {
         current_is_charging = true;
         current_percentage = 100.0F;
         return current_percentage;
     }
-    const float voltage = batteryGetBusVoltageVolts();
+    const float voltage = battery_getBusVoltageVolts();
     const float percentage = ((voltage - 3.0F) / 1.2F) * 100.0F;
 
     float result = percentage > 100 ? 100 : // clamp to between 100 and 0

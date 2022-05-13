@@ -31,61 +31,61 @@ typedef struct DateTime {
     uint8_t year;
 } DateTime;
 
-bool dateTimeEquals(const DateTime *const a, const DateTime *const b);
+bool rtc_dateTimeEquals(const DateTime *a, const DateTime *b);
 
-const char *weekdayToString(const WeekDay weekDay);
+const char *rtc_weekdayToString(const WeekDay weekDay);
 
-const char *monthToString(const uint8_t month);
+const char *rtc_monthToString(const uint8_t month);
 
-void rtcInit();
+void rtc_init();
 
-bool rtcIsRunning();
+bool rtc_isRunning();
 
-bool rtcIsErrored();
+bool rtc_isErrored();
 
-bool rtcIsBatteryEnabled();
+bool rtc_isBatteryEnabled();
 
-uint32_t rtcGetBaudRate();
+uint32_t rtc_getBaudRate();
 
-uint8_t rtcGetSeconds();
+uint8_t rtc_getSeconds();
 
-uint8_t rtcGetMinutes();
+uint8_t rtc_getMinutes();
 
-uint8_t rtcGetHours();
+uint8_t rtc_getHours();
 
-WeekDay rtcGetWeekday();
+WeekDay rtc_getWeekday();
 
-uint8_t rtcGetDate();
+uint8_t rtc_getDate();
 
-uint8_t rtcGetMonth();
+uint8_t rtc_getMonth();
 
-uint8_t rtcGetYear();
+uint8_t rtc_getYear();
 
-void rtcGetDateTime(DateTime *const result);
+void rtc_getDateTime(DateTime *const result);
 
-void rtcSetIsRunning(const bool isRunning);
+void rtc_setIsRunning(const bool isRunning);
 
-void rtcSetIsErrored(const bool isErrored);
+void rtc_setIsErrored(const bool isErrored);
 
-void rtcSetIsBatteryEnabled(const bool isBatteryEnabled);
+void rtc_setIsBatteryEnabled(const bool isBatteryEnabled);
 
-void rtcSetBaudRate(const uint32_t baudrate);
+void rtc_setBaudRate(const uint32_t baudrate);
 
-void rtcSetSeconds(const uint8_t seconds);
+void rtc_setSeconds(const uint8_t seconds);
 
-void rtcSetMinutes(const uint8_t minutes);
+void rtc_setMinutes(const uint8_t minutes);
 
-void rtcSetHours(const uint8_t hours);
+void rtc_setHours(const uint8_t hours);
 
-void rtcSetWeekday(const WeekDay weekday);
+void rtc_setWeekday(const WeekDay weekday);
 
-void rtcSetDate(const uint8_t date);
+void rtc_setDate(const uint8_t date);
 
-void rtcSetMonth(const uint8_t month);
+void rtc_setMonth(const uint8_t month);
 
-void rtcSetYear(const uint8_t year);
+void rtc_setYear(const uint8_t year);
 
-void rtcSetDateTime(const DateTime *const dateTime);
+void rtc_setDateTime(const DateTime *const dateTime);
 
 #ifdef __cplusplus
 }

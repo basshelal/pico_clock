@@ -1,11 +1,12 @@
+#include "utils.h"
 #include "button_handler.h"
 
-ButtonState buttonStateA = {.button = A_BUTTON_PIN};
-ButtonState buttonStateB = {.button = B_BUTTON_PIN};
-ButtonState buttonStateX = {.button = X_BUTTON_PIN};
-ButtonState buttonStateY = {.button = Y_BUTTON_PIN};
+public ButtonState buttonStateA = {.button = A_BUTTON_PIN};
+public ButtonState buttonStateB = {.button = B_BUTTON_PIN};
+public ButtonState buttonStateX = {.button = X_BUTTON_PIN};
+public ButtonState buttonStateY = {.button = Y_BUTTON_PIN};
 
-static inline void handleStateChanged(ButtonState *const state) {
+private inline void handleStateChanged(ButtonState *const state) {
     if (!state) return;
     state->isOn = !gpio_get(state->button);
     if (state->changedCallback) {
@@ -13,7 +14,7 @@ static inline void handleStateChanged(ButtonState *const state) {
     }
 }
 
-static void handleCallback(const uint gpio, const uint32_t event) {
+private void handleCallback(const uint gpio, const uint32_t event) {
     switch (gpio) {
         case A_BUTTON_PIN:
             handleStateChanged(&buttonStateA);
@@ -30,7 +31,7 @@ static void handleCallback(const uint gpio, const uint32_t event) {
     }
 }
 
-static inline void handleHeld(ButtonState *const state) {
+private inline void handleHeld(ButtonState *const state) {
     if (!state) return;
     if (state->isOn) {
         state->millisHeld += MILLIS_PER_CYCLE_MAIN_CORE;
@@ -43,7 +44,7 @@ static inline void handleHeld(ButtonState *const state) {
     }
 }
 
-void buttonHandlerInit() {
+public void buttonHandler_init() {
     gpio_set_dir(A_BUTTON_PIN, GPIO_IN);
     gpio_set_function(A_BUTTON_PIN, GPIO_FUNC_SIO);
     gpio_pull_up(A_BUTTON_PIN);
@@ -72,7 +73,7 @@ void buttonHandlerInit() {
     buttonStateY.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
 }
 
-void buttonHandlerLoop() {
+public void buttonHandler_loop() {
     handleHeld(&buttonStateA);
     handleHeld(&buttonStateB);
     handleHeld(&buttonStateX);

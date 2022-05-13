@@ -1,25 +1,12 @@
 #include "utils.h"
 
-static uint64_t cyclesPassed = 0;
+private uint64_t cyclesPassed = 0;
 
-uint64_t getCyclesPassed() { return cyclesPassed; }
+public uint64_t getCyclesPassed() { return cyclesPassed; }
 
-void finishCycle() { cyclesPassed++; }
+public void finishCycle() { cyclesPassed++; }
 
-static const char charLookup[96] = {
-        ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')',
-        '*', '+', ',', '-', '.', '/', '0', '1', '2', '3',
-        '4', '5', '6', '7', '8', '9', ':', ';', '<', '=',
-        '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F',
-        'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[',
-        '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e',
-        'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-        'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
-        'z', '{', '|', '}', '~', 0
-};
-
-const char *byte_to_binary(const uint8_t x) {
+public const char *byteToBinary(const uint8_t x) {
     static char b[9];
     b[0] = '\0';
     int z;
@@ -27,11 +14,4 @@ const char *byte_to_binary(const uint8_t x) {
         strcat(b, ((x & z) == z) ? "1" : "0");
     }
     return b;
-}
-
-uint8_t get_font_index_for_char(const char c) {
-    for (int i = 0; i < 96; ++i) {
-        if (c == charLookup[i]) return i;
-    }
-    return 96 - 1;
 }

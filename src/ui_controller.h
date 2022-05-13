@@ -9,9 +9,9 @@
 #include "ui_view.h"
 
 /** Call once to initialize UIController */
-void uiControllerInit();
+void uiController_init();
 
 /** Call once in main loop */
-void uiControllerLoop();
+void uiController_loop();
 
 #endif //PICO_CLOCK_UI_CONTROLLER_H

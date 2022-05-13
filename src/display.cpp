@@ -6,51 +6,52 @@
 
 using namespace pimoroni;
 
-static PicoDisplay2 display = NULL;
+private PicoDisplay2 display = NULL;
 
-void displayInit(uint16_t *const buffer) {
+public void display_init(uint16_t *const buffer) {
     display = PicoDisplay2(buffer);
     display.init();
-    displayClear();
+    display_clear();
     display.set_font(&font8);
 }
 
-void displayClear() {
+public void display_clear() {
     for (int i = 0; i < DISPLAY_AREA; ++i) {
         display.__fb[i] = 0;
     }
 }
 
-void displaySetText(const char *text, const int32_t x, const int32_t y, const int32_t wrap, const uint8_t scale) {
-    display.text(text, Point(x, y), wrap, scale);
-}
-
-void displayUpdate() {
+public void display_update() {
     display.update();
 }
 
-void displaySetBacklight(const uint8_t percentage) {
+public void display_setColor(const Color color) {
+    display.set_pen(color.r, color.g, color.b);
+}
+
+public void display_setText(const char *text, const int32_t x, const int32_t y,
+                            const int32_t wrap, const uint8_t scale) {
+    display.text(text, Point(x, y), wrap, scale);
+}
+
+public void display_setRectangle(const Rectangle rectangle) {
+    display.rectangle(Rect(rectangle.x, rectangle.y, rectangle.w, rectangle.h));
+}
+
+public void display_setBacklight(const uint8_t percentage) {
     const float factor = percentage > 100 ? 1.0F : ((float) percentage) / 100.0F;
     const uint8_t brightness = factor == 0.0F ? 0 : (uint8_t) (255.0F * factor);
     display.set_backlight(brightness);
 }
 
-void displaySetColor(const Color color) {
-    display.set_pen(color.r, color.g, color.b);
+public int display_getStringWidth(const char *string, const int scale) {
+    return bitmap::measure_text(&font8, string, scale);
 }
 
-void displaySetRectangle(const Rectangle rectangle) {
-    display.rectangle(Rect(rectangle.x, rectangle.y, rectangle.w, rectangle.h));
-}
-
-uint8_t displayGetCharWidth(const char c) {
-    return font8.widths[get_font_index_for_char(c)];
-}
-
-int displayGetStringWidth(const char *string) {
-    int result = 0;
-    for (int i = 0; i < strlen(string); ++i) {
-        result += displayGetCharWidth(string[i]);
-    }
+public Color display_getRandomColor() {
+    Color result;
+    result.r = (uint8_t) random();
+    result.g = (uint8_t) random();
+    result.b = (uint8_t) random();
     return result;
 }
