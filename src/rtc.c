@@ -13,6 +13,9 @@
 #define I2C_TIMEOUT_US 5000
 
 private uint32_t rtcBaudrate;
+private DateTime currentDateTime;
+private DateTime oldDateTime;
+private DateTimeChangedCallback dateTimeChangedCallback;
 
 private uint8_t readRegister(const uint8_t reg) {
     uint8_t readValue;
@@ -97,6 +100,10 @@ public void rtc_init() {
     gpio_pull_up(RTC_SCLK_PIN);
     gpio_pull_up(RTC_SDA_PIN);
     rtcBaudrate = i2c_init(RTC_I2C, RTC_BAUD_RATE);
+}
+
+public void rtc_setDateTimeChangedCallback(DateTimeChangedCallback callback) {
+    dateTimeChangedCallback = callback;
 }
 
 public bool rtc_isRunning() {
@@ -381,4 +388,13 @@ public void rtc_setDateTime(const DateTime *const dateTime) {
     rtc_setDate(dateTime->date);
     rtc_setMonth(dateTime->month);
     rtc_setYear(dateTime->year);
+}
+
+public void rtc_loop() {
+    rtc_getDateTime(&currentDateTime);
+    if (!rtc_dateTimeEquals(&oldDateTime, &currentDateTime)) {
+        if (dateTimeChangedCallback)
+            dateTimeChangedCallback(&oldDateTime, &currentDateTime);
+        oldDateTime = currentDateTime;
+    }
 }

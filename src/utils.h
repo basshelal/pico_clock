@@ -23,6 +23,8 @@ uint64_t getCyclesPassed();
 
 void finishCycle();
 
+void substring(const char *string, int fromIndex, int toIndex, char *result);
+
 /**
  * Clears the console
  * Taken from: https://stackoverflow.com/a/7660837/7175336

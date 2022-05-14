@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD 17)
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-add_executable(${NAME}
+set(SRC_FILES
         src/main.c
         src/constants.h
         src/rtc.h src/rtc.c
@@ -25,6 +25,8 @@ add_executable(${NAME}
         src/ui_view.h src/ui_view.c
         src/button_handler.h src/button_handler.c
         src/ui_controller.h src/ui_controller.c)
+
+add_executable(${NAME} ${SRC_FILES})
 
 # Include pimoroni libraries
 include(libraries/pico_display_2/pico_display_2)
@@ -46,3 +48,8 @@ pico_enable_stdio_uart(pico_clock 0)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(${NAME})
+
+set_source_files_properties(
+        ${SRC_FILES}
+        PROPERTIES COMPILE_OPTIONS "-Wno-error=discarded-qualifiers"
+)

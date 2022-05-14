@@ -35,6 +35,10 @@ void uiView_clearDetails();
 
 void uiView_showBatteryPercentage(const char *text);
 
+void uiView_showClockHighlight(const int fromIndex, const int toIndex, const Color color);
+
+void uiView_hideClockHighlight();
+
 void uiView_showClock(const char *text);
 
 void uiView_showDate(const char *text);

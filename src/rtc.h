@@ -31,6 +31,9 @@ typedef struct DateTime {
     uint8_t year;
 } DateTime;
 
+typedef void (*DateTimeChangedCallback)(
+        const struct DateTime *const oldDateTime, const struct DateTime *const newDateTime);
+
 bool rtc_dateTimeEquals(const DateTime *a, const DateTime *b);
 
 const char *rtc_weekdayToString(const WeekDay weekDay);
@@ -38,6 +41,8 @@ const char *rtc_weekdayToString(const WeekDay weekDay);
 const char *rtc_monthToString(const uint8_t month);
 
 void rtc_init();
+
+void rtc_setDateTimeChangedCallback(DateTimeChangedCallback callback);
 
 bool rtc_isRunning();
 
@@ -86,6 +91,8 @@ void rtc_setMonth(const uint8_t month);
 void rtc_setYear(const uint8_t year);
 
 void rtc_setDateTime(const DateTime *const dateTime);
+
+void rtc_loop();
 
 #ifdef __cplusplus
 }

@@ -10,8 +10,7 @@
 #include "ui_controller.h"
 
 // Global state variables
-private DateTime currentDateTime;
-private DateTime oldDateTime;
+private DateTime *currentDateTime;
 private char timeTextBuffer[9]; // 8 chars in HH:MM:SS format + 1 for string NULL terminator
 private char dateTextBuffer[14]; // 13 chars in DOW DD-MMM-YY + 1 for string NULL terminator
 private char batteryTextBuffer[64];
@@ -25,10 +24,10 @@ private void onLight() {
 
 private void updateText() {
     sprintf(timeTextBuffer, "%02i:%02i:%02i",
-            currentDateTime.hours, currentDateTime.minutes, currentDateTime.seconds);
+            currentDateTime->hours, currentDateTime->minutes, currentDateTime->seconds);
     sprintf(dateTextBuffer, "%s %02i-%s-%02i",
-            rtc_weekdayToString(currentDateTime.weekDay),
-            currentDateTime.date, rtc_monthToString(currentDateTime.month), currentDateTime.year);
+            rtc_weekdayToString(currentDateTime->weekDay),
+            currentDateTime->date, rtc_monthToString(currentDateTime->month), currentDateTime->year);
     sprintf(batteryTextBuffer, "%02.f%% %02.02fV %02.fmW %02.02fmV",
             battery_getPercentage(),
             battery_getBusVoltageVolts(),
@@ -46,26 +45,31 @@ private void updateText() {
     uiView_requestUpdate();
 }
 
+private void dateTimeChanged(const struct DateTime *const oldDateTime,
+                             const struct DateTime *const newDateTime) {
+    currentDateTime = newDateTime;
+    updateText();
+}
+
 private void setup() {
     set_sys_clock_48mhz(); // as low as we can reliably go, we do this to save power
     stdio_usb_init();
 
+#ifdef DEBUG
     onLight();
+#endif
 
     uiController_init();
 
     rtc_init();
     if (!rtc_isRunning()) rtc_setIsRunning(true);
+    rtc_setDateTimeChangedCallback(dateTimeChanged);
 
     battery_init();
 }
 
 private void loop() {
-    rtc_getDateTime(&currentDateTime);
-    if (!rtc_dateTimeEquals(&oldDateTime, &currentDateTime)) {
-        oldDateTime = currentDateTime;
-        updateText();
-    }
+    rtc_loop();
     uiController_loop();
 }
 

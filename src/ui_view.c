@@ -21,6 +21,15 @@ private Rectangle clockRect = {
         .w=6 * charWidth * clockTextScale,
         .h=1 * charHeight * clockTextScale
 };
+private const char *clockLastText;
+private struct {
+    Rectangle rectangle;
+    bool hasHighlight;
+    int fromIndex;
+    int toIndex;
+    Color color;
+    char *buffer;
+} clockHighlightState;
 
 private const uint8_t dateTextScale = 2;
 private Rectangle dateRect = {
@@ -124,6 +133,8 @@ public void uiView_init() {
     multicore_launch_core1(&uiView_launchUICore);
     uiView_requestUpdate();
     uiView_setBrightness(100);
+
+    clockHighlightState.buffer = (char *) calloc(sizeof(char), 8);
 }
 
 public void uiView_clearAll() {
@@ -148,11 +159,39 @@ public void uiView_showBatteryPercentage(const char *text) {
     }
 }
 
+public void uiView_showClockHighlight(const int fromIndex, const int toIndex, const Color color) {
+    clockHighlightState.hasHighlight = true;
+    clockHighlightState.fromIndex = fromIndex;
+    clockHighlightState.toIndex = toIndex;
+    clockHighlightState.color = color;
+    uiView_showClock(clockLastText);
+}
+
+public void uiView_hideClockHighlight() {
+    clockHighlightState.hasHighlight = false;
+    uiView_showClock(clockLastText);
+}
+
 public void uiView_showClock(const char *text) {
+    clockLastText = text;
     uiView_clearRectangle(clockRect);
     if (text != NULL) {
         clockRect.w = display_getStringWidth(text, clockTextScale);
         clockRect.x = (DISPLAY_WIDTH / 2) - (clockRect.w / 2);
+        if (clockHighlightState.hasHighlight) {
+            clockHighlightState.rectangle.y = clockRect.y;
+            clockHighlightState.rectangle.h = clockRect.h;
+
+            substring(text, 0, 3, clockHighlightState.buffer);
+            int leftWidth = display_getStringWidth(clockHighlightState.buffer, clockTextScale);
+            substring(text, 5, 8, clockHighlightState.buffer);
+            int rightWidth = display_getStringWidth(clockHighlightState.buffer, clockTextScale);
+            clockHighlightState.rectangle.x = clockRect.x + leftWidth;
+            clockHighlightState.rectangle.w = clockRect.w - (rightWidth + leftWidth);
+
+            display_setColor(clockHighlightState.color);
+            display_setRectangle(clockHighlightState.rectangle);
+        }
         display_setColor(TEXT_COLOR);
         display_setText(text, clockRect.x, clockRect.y,
                         DISPLAY_WIDTH - outsideMargin, clockTextScale);

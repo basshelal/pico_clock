@@ -15,3 +15,16 @@ public const char *byteToBinary(const uint8_t x) {
     }
     return b;
 }
+
+public void substring(const char *string, int fromIndex, int toIndex, char *result) {
+    if (!string || !result ||
+        fromIndex < 0 || toIndex < 0 ||
+        fromIndex > toIndex)
+        return;
+    const int stringLength = strlen(string);
+    const int resultLength = strlen(result);
+    const int requestedLength = (toIndex - fromIndex) + 1;
+    if (stringLength <= 0 || toIndex > stringLength)
+        return;
+    strncpy(result, string + fromIndex, requestedLength - 1);
+}
