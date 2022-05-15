@@ -22,9 +22,12 @@ public void substring(const char *string, int fromIndex, int toIndex, char *resu
         fromIndex > toIndex)
         return;
     const int stringLength = strlen(string);
-    const int resultLength = strlen(result);
-    const int requestedLength = (toIndex - fromIndex) + 1;
+    const int requestedLength = toIndex - fromIndex;
+    if (stringLength <= 0 || requestedLength <= 0) {
+        strlcpy(result, NULL, strlen(result) + 1);
+        return;
+    }
     if (stringLength <= 0 || toIndex > stringLength)
         return;
-    strncpy(result, string + fromIndex, requestedLength - 1);
+    strlcpy(result, string + fromIndex, requestedLength + 1);
 }

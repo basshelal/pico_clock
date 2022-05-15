@@ -182,9 +182,9 @@ public void uiView_showClock(const char *text) {
             clockHighlightState.rectangle.y = clockRect.y;
             clockHighlightState.rectangle.h = clockRect.h;
 
-            substring(text, 0, 3, clockHighlightState.buffer);
+            substring(text, 0, clockHighlightState.fromIndex, clockHighlightState.buffer);
             int leftWidth = display_getStringWidth(clockHighlightState.buffer, clockTextScale);
-            substring(text, 5, 8, clockHighlightState.buffer);
+            substring(text, clockHighlightState.toIndex, 8, clockHighlightState.buffer);
             int rightWidth = display_getStringWidth(clockHighlightState.buffer, clockTextScale);
             clockHighlightState.rectangle.x = clockRect.x + leftWidth;
             clockHighlightState.rectangle.w = clockRect.w - (rightWidth + leftWidth);

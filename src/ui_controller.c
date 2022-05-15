@@ -9,6 +9,9 @@ private struct {
         SET_DATE, SET_ALARM
     } currentMode;
     uint64_t timeoutMillis;
+    struct {
+        int highlightIndex;
+    } setTimeState;
 #define DEFAULT_TIMEOUT_MILLIS 3500
 } state;
 
@@ -32,6 +35,7 @@ private void uiController_clearDetails() {
     state.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
     state.currentMode = HIDDEN;
+    state.setTimeState.highlightIndex = 0;
     uiView_clearDetails();
     uiView_hideClockHighlight();
     uiView_requestUpdate();
@@ -57,6 +61,14 @@ private void uiController_pressedA() {
         case SET_BRIGHTNESS:
             break;
         case SET_TIME:
+            if (state.setTimeState.highlightIndex > 0) {
+                state.setTimeState.highlightIndex--;
+                if (state.setTimeState.highlightIndex == 2 || state.setTimeState.highlightIndex == 5)
+                    state.setTimeState.highlightIndex--;
+                uiView_showClockHighlight(state.setTimeState.highlightIndex,
+                                          state.setTimeState.highlightIndex + 1, RED);
+                uiView_requestUpdate();
+            }
             break;
         case SET_DATE:
             break;
@@ -80,13 +92,23 @@ private void uiController_pressedB() {
             uiView_showBottomRightButton("-");
             uiView_showMessage("Set time");
 
-            uiView_showClockHighlight(0, 3, RED);
+            state.setTimeState.highlightIndex = 0;
+            uiView_showClockHighlight(state.setTimeState.highlightIndex,
+                                      state.setTimeState.highlightIndex + 1, RED);
 
             uiView_requestUpdate();
             break;
         case SET_BRIGHTNESS:
             break;
         case SET_TIME:
+            if (state.setTimeState.highlightIndex < 7) {
+                state.setTimeState.highlightIndex++;
+                if (state.setTimeState.highlightIndex == 2 || state.setTimeState.highlightIndex == 5)
+                    state.setTimeState.highlightIndex++;
+                uiView_showClockHighlight(state.setTimeState.highlightIndex,
+                                          state.setTimeState.highlightIndex + 1, RED);
+                uiView_requestUpdate();
+            }
             break;
         case SET_DATE:
             break;
