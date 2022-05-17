@@ -19,6 +19,7 @@ extern const Color RED;
 extern const Color GREEN;
 extern const Color BLUE;
 extern const Color YELLOW;
+extern const Color HIGHLIGHT_COLOR;
 
 /** Call once before UIView use */
 extern void uiView_init();

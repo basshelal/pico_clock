@@ -19,13 +19,18 @@ set(SRC_FILES
         src/main.c
         src/constants.h
         src/utils.h src/utils.c
+
+        src/peripherals/peripherals.h src/peripherals/peripherals.c
         src/peripherals/rtc.h src/peripherals/rtc.c
         src/peripherals/battery.h src/peripherals/battery.c
         src/peripherals/display.h src/peripherals/display.cpp
+
+        src/middleware/button_handler.h src/middleware/button_handler.c
+
+        src/ui/ui.h src/ui/ui.c
+        src/ui/ui_model.h src/types.h src/ui/ui_model.c
         src/ui/ui_view.h src/ui/ui_view.c
-        src/button_handler.h src/button_handler.c
-        src/ui/ui_controller.h src/ui/ui_controller.c
-        src/types.h src/ui/ui_model.c src/ui/ui_model.h)
+        src/ui/ui_controller.h src/ui/ui_controller.c)
 
 add_executable(${NAME} ${SRC_FILES})
 

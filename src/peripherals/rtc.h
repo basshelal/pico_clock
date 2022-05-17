@@ -8,12 +8,6 @@
 extern "C" {
 #endif
 
-extern bool rtc_dateTimeEquals(const DateTime *a, const DateTime *b);
-
-extern const char *rtc_weekdayToString(const WeekDay weekDay);
-
-extern const char *rtc_monthToString(const uint8_t month);
-
 extern void rtc_init();
 
 extern void rtc_setDateTimeChangedCallback(DateTimeChangedCallback callback);

@@ -34,71 +34,6 @@ private void writeRegister(const uint8_t reg, const uint8_t value) {
     i2c_write_timeout_us(RTC_I2C, RTC_I2C_ADDRESS, array, 2, false, I2C_TIMEOUT_US);
 }
 
-public inline bool rtc_dateTimeEquals(const DateTime *a, const DateTime *b) {
-    if (!a && !b) return true;
-    if (!a || !b) return false;
-    return a->seconds == b->seconds &&
-           a->minutes == b->minutes &&
-           a->hours == b->hours &&
-           a->weekDay == b->weekDay &&
-           a->date == b->date &&
-           a->month == b->month &&
-           a->year == b->year;
-}
-
-public inline const char *rtc_weekdayToString(const WeekDay weekDay) {
-    switch (weekDay) {
-        case MONDAY:
-            return "Mon";
-        case TUESDAY:
-            return "Tue";
-        case WEDNESDAY:
-            return "Wed";
-        case THURSDAY:
-            return "Thu";
-        case FRIDAY:
-            return "Fri";
-        case SATURDAY:
-            return "Sat";
-        case SUNDAY:
-            return "Sun";
-        default:
-            return "Mon";
-    }
-}
-
-public inline const char *rtc_monthToString(const uint8_t month) {
-    const uint8_t clampedMonth = (month < 1 || month > 12) ? 1 : month;
-    switch (clampedMonth) {
-        case 1:
-            return "Jan";
-        case 2:
-            return "Feb";
-        case 3:
-            return "Mar";
-        case 4:
-            return "Apr";
-        case 5:
-            return "May";
-        case 6:
-            return "Jun";
-        case 7:
-            return "Jul";
-        case 8:
-            return "Aug";
-        case 9:
-            return "Sep";
-        case 10:
-            return "Oct";
-        case 11:
-            return "Nov";
-        case 12:
-            return "Dec";
-        default:
-            return "Jan";
-    }
-}
-
 public void rtc_init() {
     gpio_set_function(RTC_SCLK_PIN, GPIO_FUNC_I2C);
     gpio_set_function(RTC_SDA_PIN, GPIO_FUNC_I2C);
@@ -397,7 +332,7 @@ public void rtc_setDateTime(const DateTime *const dateTime) {
 
 public void rtc_loop() {
     rtc_getDateTime(&currentDateTime);
-    if (!rtc_dateTimeEquals(&oldDateTime, &currentDateTime)) {
+    if (!dateTimeEquals(&oldDateTime, &currentDateTime)) {
         if (dateTimeChangedCallback)
             dateTimeChangedCallback(&oldDateTime, &currentDateTime);
         oldDateTime = currentDateTime;

@@ -1,5 +1,5 @@
 #include "button_handler.h"
-#include "utils.h"
+#include "../utils.h"
 #include "pico/stdlib.h"
 
 public ButtonState buttonStateA = {.button = A_BUTTON_PIN};

@@ -1,77 +1,22 @@
 #include "ui_controller.h"
 #include "../utils.h"
-#include "../button_handler.h"
+#include "../middleware/button_handler.h"
 #include "ui_view.h"
-
-private struct {
-    bool countingMillisSinceLastPress;
-    uint64_t millisSinceLastPress;
-    enum {
-        HIDDEN, DETAILS,
-        SET_BRIGHTNESS, SET_TIME,
-        SET_DATE, SET_ALARM
-    } currentMode;
-    uint64_t timeoutMillis;
-    struct {
-        int highlightIndex;
-    } setTimeState;
-#define DEFAULT_TIMEOUT_MILLIS 3500
-} state;
-
-private char messageBuffer[512];
-
-private void uiController_showDetails() {
-    state.countingMillisSinceLastPress = true;
-    state.millisSinceLastPress = 0;
-
-    state.currentMode = DETAILS;
-    uiView_showTopLeftButton("SET BRIT");
-    uiView_showBottomLeftButton("SET TIME");
-    uiView_showTopRightButton("SET DATE");
-    uiView_showBottomRightButton("SET ALRM");
-    uiView_requestUpdate();
-}
-
-private void uiController_clearDetails() {
-    state.countingMillisSinceLastPress = false;
-    state.millisSinceLastPress = 0;
-    state.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
-
-    state.currentMode = HIDDEN;
-    state.setTimeState.highlightIndex = 0;
-    uiView_clearDetails();
-    uiView_hideClockHighlight();
-    uiView_requestUpdate();
-}
+#include "ui_model.h"
 
 private void uiController_pressedA() {
-    state.millisSinceLastPress = 0;
-    switch (state.currentMode) {
+    uiModel_buttonPressed();
+    switch (uiModel_getActivity()) {
         case HIDDEN:
-            uiController_showDetails();
+            uiModel_setActivity(DETAILS);
             break;
         case DETAILS:
-            state.currentMode = SET_BRIGHTNESS;
-            uiView_showTopRightButton("+");
-            uiView_showBottomRightButton("-");
-            uiView_showTopLeftButton(NULL);
-            uiView_showBottomLeftButton(NULL);
-
-            snprintf(messageBuffer, 512, "%u %%", display_getBacklight());
-            uiView_showMessage(messageBuffer);
-            uiView_requestUpdate();
+            uiModel_setActivity(SET_BRIGHTNESS);
             break;
         case SET_BRIGHTNESS:
             break;
         case SET_TIME:
-            if (state.setTimeState.highlightIndex > 0) {
-                state.setTimeState.highlightIndex--;
-                if (state.setTimeState.highlightIndex == 2 || state.setTimeState.highlightIndex == 5)
-                    state.setTimeState.highlightIndex--;
-                uiView_showClockHighlight(state.setTimeState.highlightIndex,
-                                          state.setTimeState.highlightIndex + 1, RED);
-                uiView_requestUpdate();
-            }
+            uiModel_decrementRightClockHighlight();
             break;
         case SET_DATE:
             break;
@@ -81,37 +26,18 @@ private void uiController_pressedA() {
 }
 
 private void uiController_pressedB() {
-    state.millisSinceLastPress = 0;
-    switch (state.currentMode) {
+    uiModel_buttonPressed();
+    switch (uiModel_getActivity()) {
         case HIDDEN:
-            uiController_showDetails();
+            uiModel_setActivity(DETAILS);
             break;
         case DETAILS:
-            state.currentMode = SET_TIME;
-            state.timeoutMillis = 5000;
-            uiView_showTopLeftButton("<");
-            uiView_showBottomLeftButton(">");
-            uiView_showTopRightButton("+");
-            uiView_showBottomRightButton("-");
-            uiView_showMessage("Set time");
-
-            state.setTimeState.highlightIndex = 0;
-            uiView_showClockHighlight(state.setTimeState.highlightIndex,
-                                      state.setTimeState.highlightIndex + 1, RED);
-
-            uiView_requestUpdate();
+            uiModel_setActivity(SET_TIME);
             break;
         case SET_BRIGHTNESS:
             break;
         case SET_TIME:
-            if (state.setTimeState.highlightIndex < 7) {
-                state.setTimeState.highlightIndex++;
-                if (state.setTimeState.highlightIndex == 2 || state.setTimeState.highlightIndex == 5)
-                    state.setTimeState.highlightIndex++;
-                uiView_showClockHighlight(state.setTimeState.highlightIndex,
-                                          state.setTimeState.highlightIndex + 1, RED);
-                uiView_requestUpdate();
-            }
+            uiModel_incrementClockHighlight();
             break;
         case SET_DATE:
             break;
@@ -121,18 +47,15 @@ private void uiController_pressedB() {
 }
 
 private void uiController_pressedX() {
-    state.millisSinceLastPress = 0;
-    switch (state.currentMode) {
+    uiModel_buttonPressed();
+    switch (uiModel_getActivity()) {
         case HIDDEN:
-            uiController_showDetails();
+            uiModel_setActivity(DETAILS);
             break;
         case DETAILS:
             break;
         case SET_BRIGHTNESS:
-            display_setBacklight(display_getBacklight() + 5);
-            snprintf(messageBuffer, 512, "%u %%", display_getBacklight());
-            uiView_showMessage(messageBuffer);
-            uiView_requestUpdate();
+            uiModel_incrementBrightness();
             break;
         case SET_TIME:
             break;
@@ -144,18 +67,15 @@ private void uiController_pressedX() {
 }
 
 private void uiController_pressedY() {
-    state.millisSinceLastPress = 0;
-    switch (state.currentMode) {
+    uiModel_buttonPressed();
+    switch (uiModel_getActivity()) {
         case HIDDEN:
-            uiController_showDetails();
+            uiModel_setActivity(DETAILS);
             break;
         case DETAILS:
             break;
         case SET_BRIGHTNESS:
-            display_setBacklight(display_getBacklight() - 5);
-            snprintf(messageBuffer, 512, "%u %%", display_getBacklight());
-            uiView_showMessage(messageBuffer);
-            uiView_requestUpdate();
+            uiModel_decrementBrightness();
             break;
         case SET_TIME:
             break;
@@ -199,7 +119,7 @@ private void uiController_heldCallbackY(const ButtonState *const buttonState) {
 }
 
 public void uiController_init() {
-    uiView_init();
+    uiModel_init();
     buttonHandler_init();
 
     buttonStateA.changedCallback = uiController_changedCallbackA;
@@ -213,18 +133,9 @@ public void uiController_init() {
 
     buttonStateY.changedCallback = uiController_changedCallbackY;
     buttonStateY.heldCallback = uiController_heldCallbackY;
-
-    state.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 }
 
 public void uiController_loop() {
     buttonHandler_loop();
-    uiView_loop();
-
-    if (state.countingMillisSinceLastPress) {
-        state.millisSinceLastPress += MILLIS_PER_CYCLE_MAIN_CORE;
-    }
-    if (state.millisSinceLastPress > state.timeoutMillis) {
-        uiController_clearDetails();
-    }
+    uiModel_loop();
 }

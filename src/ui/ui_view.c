@@ -124,6 +124,7 @@ public const Color RED = {.r = 255, .g = 0, .b = 0};
 public const Color GREEN = {.r = 0, .g = 255, .b = 0};
 public const Color BLUE = {.r = 0, .g = 0, .b = 255};
 public const Color YELLOW = {.r = 255, .g = 255, .b = 0};
+public const Color HIGHLIGHT_COLOR = {.r = 200, .g = 20, .b = 20};
 
 #define TEXT_COLOR WHITE
 

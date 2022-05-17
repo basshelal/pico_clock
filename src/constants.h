@@ -4,8 +4,7 @@
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 
-// set to 0 for release, used only for printing information when in debug mode
-#define DEBUG 1
+#define DEBUG true
 
 #define ON_LIGHT_PIN PICO_DEFAULT_LED_PIN
 

@@ -35,6 +35,14 @@ extern void substring(const char *string, int fromIndex, int toIndex, char *resu
 
 extern Color getRandomColor();
 
+inline bool isDebug() {
+#if defined(DEBUG) && DEBUG == true
+    return true;
+#else
+    return false;
+#endif
+}
+
 /**
  * Clears the console
  * Taken from: https://stackoverflow.com/a/7660837/7175336
@@ -149,6 +157,71 @@ inline uint64_t secondsToCycles(float seconds) {
 inline float cyclesToSeconds(uint64_t cycles) {
     const float cyclesPerSecond = (1000.0F / (float) MILLIS_PER_CYCLE_MAIN_CORE);
     return (uint64_t) (((float) cycles) / cyclesPerSecond);
+}
+
+inline bool dateTimeEquals(const DateTime *const a, const DateTime *const b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a->seconds == b->seconds &&
+           a->minutes == b->minutes &&
+           a->hours == b->hours &&
+           a->weekDay == b->weekDay &&
+           a->date == b->date &&
+           a->month == b->month &&
+           a->year == b->year;
+}
+
+inline const char *weekdayToString(const WeekDay weekDay) {
+    switch (weekDay) {
+        case MONDAY:
+            return "Mon";
+        case TUESDAY:
+            return "Tue";
+        case WEDNESDAY:
+            return "Wed";
+        case THURSDAY:
+            return "Thu";
+        case FRIDAY:
+            return "Fri";
+        case SATURDAY:
+            return "Sat";
+        case SUNDAY:
+            return "Sun";
+        default:
+            return "Mon";
+    }
+}
+
+inline const char *monthToString(const uint8_t month) {
+    const uint8_t clampedMonth = (month < 1 || month > 12) ? 1 : month;
+    switch (clampedMonth) {
+        case 1:
+            return "Jan";
+        case 2:
+            return "Feb";
+        case 3:
+            return "Mar";
+        case 4:
+            return "Apr";
+        case 5:
+            return "May";
+        case 6:
+            return "Jun";
+        case 7:
+            return "Jul";
+        case 8:
+            return "Aug";
+        case 9:
+            return "Sep";
+        case 10:
+            return "Oct";
+        case 11:
+            return "Nov";
+        case 12:
+            return "Dec";
+        default:
+            return "Jan";
+    }
 }
 
 #ifdef __cplusplus
