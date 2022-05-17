@@ -18,13 +18,14 @@ pico_sdk_init()
 set(SRC_FILES
         src/main.c
         src/constants.h
-        src/rtc.h src/rtc.c
-        src/battery.h src/battery.c
         src/utils.h src/utils.c
-        src/display.h src/display.cpp
-        src/ui_view.h src/ui_view.c
+        src/peripherals/rtc.h src/peripherals/rtc.c
+        src/peripherals/battery.h src/peripherals/battery.c
+        src/peripherals/display.h src/peripherals/display.cpp
+        src/ui/ui_view.h src/ui/ui_view.c
         src/button_handler.h src/button_handler.c
-        src/ui_controller.h src/ui_controller.c)
+        src/ui/ui_controller.h src/ui/ui_controller.c
+        src/types.h src/ui/ui_model.c src/ui/ui_model.h)
 
 add_executable(${NAME} ${SRC_FILES})
 

@@ -3,8 +3,12 @@
 // Only minor non-functional changes made for better refactoring and
 // added battery_getPercentage() function
 
-#include "utils.h"
 #include "battery.h"
+#include "../utils.h"
+#include <stdio.h>
+#include "pico/stdlib.h"
+#include "pico/binary_info.h"
+#include "hardware/i2c.h"
 
 /** default I2C address **/
 #define INA219_ADDRESS (0x43)

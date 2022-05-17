@@ -1,4 +1,9 @@
 #include "rtc.h"
+#include "../types.h"
+#include "../utils.h"
+#include "hardware/i2c.h"
+#include "pico/stdlib.h"
+#include <stdio.h>
 
 #define RTC_I2C_ADDRESS 0x68
 #define REG_SECONDS 0x00

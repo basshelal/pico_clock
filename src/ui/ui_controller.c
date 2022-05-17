@@ -1,4 +1,7 @@
 #include "ui_controller.h"
+#include "../utils.h"
+#include "../button_handler.h"
+#include "ui_view.h"
 
 private struct {
     bool countingMillisSinceLastPress;

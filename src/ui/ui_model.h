@@ -1,0 +1,4 @@
+#ifndef PICO_CLOCK_UI_MODEL_H
+#define PICO_CLOCK_UI_MODEL_H
+
+#endif //PICO_CLOCK_UI_MODEL_H

@@ -1,4 +1,7 @@
 #include "utils.h"
+#include "types.h"
+#include "stdlib.h"
+#include <string.h>
 
 private uint64_t cyclesPassed = 0;
 
@@ -30,4 +33,12 @@ public void substring(const char *string, int fromIndex, int toIndex, char *resu
     if (stringLength <= 0 || toIndex > stringLength)
         return;
     strlcpy(result, string + fromIndex, requestedLength + 1);
+}
+
+public Color getRandomColor() {
+    Color result;
+    result.r = (uint8_t) random();
+    result.g = (uint8_t) random();
+    result.b = (uint8_t) random();
+    return result;
 }

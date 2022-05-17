@@ -4,10 +4,10 @@
 
 #include "constants.h"
 #include "utils.h"
-#include "rtc.h"
-#include "battery.h"
-#include "ui_view.h"
-#include "ui_controller.h"
+#include "peripherals/rtc.h"
+#include "peripherals/battery.h"
+#include "ui/ui_view.h"
+#include "ui/ui_controller.h"
 
 // Global state variables
 private DateTime *currentDateTime;

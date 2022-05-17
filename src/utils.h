@@ -2,8 +2,7 @@
 #define PICO_CLOCK_UTILS_H
 
 #include "constants.h"
-#include "pico/stdlib.h"
-#include <string.h>
+#include "types.h"
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -19,19 +18,9 @@ extern "C" {
 #define private static
 #define public
 
-uint64_t getCyclesPassed();
+extern uint64_t getCyclesPassed();
 
-void finishCycle();
-
-void substring(const char *string, int fromIndex, int toIndex, char *result);
-
-/**
- * Clears the console
- * Taken from: https://stackoverflow.com/a/7660837/7175336
- */
-inline void clear_console() {
-    printf("\e[1;1H\e[2J");
-}
+extern void finishCycle();
 
 /**
  * Converts a byte (like uint8_t or int8_t) to a string with the binary representation of that byte
@@ -40,7 +29,19 @@ inline void clear_console() {
  * @param x the byte to convert
  * @return a string with the binary representation of x
  */
-const char *byteToBinary(const uint8_t x);
+extern const char *byteToBinary(const uint8_t x);
+
+extern void substring(const char *string, int fromIndex, int toIndex, char *result);
+
+extern Color getRandomColor();
+
+/**
+ * Clears the console
+ * Taken from: https://stackoverflow.com/a/7660837/7175336
+ */
+inline void clear_console() {
+    printf("\e[1;1H\e[2J");
+}
 
 /**
  * Reverses the bits in the number n, used to convert between least-significant-bit first and most-significant-bit first

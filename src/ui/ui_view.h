@@ -1,12 +1,8 @@
 #ifndef PICO_CLOCK_UI_VIEW_H
 #define PICO_CLOCK_UI_VIEW_H
 
-#include <stdlib.h>
-#include "pico/stdlib.h"
-#include <pico/multicore.h>
-#include <stdio.h>
-#include "display.h"
-#include "utils.h"
+#include "../types.h"
+#include "../peripherals/display.h"
 
 /**
  * The UIView is a single module that is responsible for any manipulation of the screen.
@@ -25,46 +21,46 @@ extern const Color BLUE;
 extern const Color YELLOW;
 
 /** Call once before UIView use */
-void uiView_init();
+extern void uiView_init();
 
 /** Clears the entire UI */
-void uiView_clearAll();
+extern void uiView_clearAll();
 
 /** Clears the details of the UI, leaving the core UI elements, the clock and date */
-void uiView_clearDetails();
+extern void uiView_clearDetails();
 
-void uiView_showBatteryPercentage(const char *text);
+extern void uiView_showBatteryPercentage(const char *text);
 
-void uiView_showClockHighlight(const int fromIndex, const int toIndex, const Color color);
+extern void uiView_showClockHighlight(const int fromIndex, const int toIndex, const Color color);
 
-void uiView_hideClockHighlight();
+extern void uiView_hideClockHighlight();
 
-void uiView_showClock(const char *text);
+extern void uiView_showClock(const char *text);
 
-void uiView_showDate(const char *text);
+extern void uiView_showDate(const char *text);
 
-void uiView_showMessage(const char *text);
+extern void uiView_showMessage(const char *text);
 
-void uiView_showTopLeftButton(const char *text);
+extern void uiView_showTopLeftButton(const char *text);
 
-void uiView_showTopLeftButtonColored(const char *text, const Color textColor);
+extern void uiView_showTopLeftButtonColored(const char *text, const Color textColor);
 
-void uiView_showBottomLeftButton(const char *text);
+extern void uiView_showBottomLeftButton(const char *text);
 
-void uiView_showTopRightButton(const char *text);
+extern void uiView_showTopRightButton(const char *text);
 
-void uiView_showBottomRightButton(const char *text);
+extern void uiView_showBottomRightButton(const char *text);
 
-void uiView_setBrightness(const uint8_t percentage);
+extern void uiView_setBrightness(const uint8_t percentage);
 
 /** Request that the UIView tells the screen to refresh at its earliest convenience */
-void uiView_requestUpdate();
+extern void uiView_requestUpdate();
 
 /** Force screen to refresh, use only when needed, use uiView_requestUpdate() for all other cases */
-void uiView_forceUpdate();
+extern void uiView_forceUpdate();
 
 /** Called once during the main loop */
-void uiView_loop();
+extern void uiView_loop();
 
 // battery percentage at top left
 // middle large clock

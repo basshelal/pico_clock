@@ -2,7 +2,8 @@
 #include "pico_graphics.hpp"
 #include "pico_display_2.hpp"
 #include <font8_data.hpp>
-#include "utils.h"
+#include "../utils.h"
+#include "../types.h"
 
 using namespace pimoroni;
 
@@ -53,12 +54,4 @@ public uint8_t display_getBacklight() {
 
 public int display_getStringWidth(const char *string, const int scale) {
     return bitmap::measure_text(&font8, string, scale);
-}
-
-public Color display_getRandomColor() {
-    Color result;
-    result.r = (uint8_t) random();
-    result.g = (uint8_t) random();
-    result.b = (uint8_t) random();
-    return result;
 }

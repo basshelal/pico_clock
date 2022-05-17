@@ -1,4 +1,8 @@
 #include "ui_view.h"
+#include "../utils.h"
+#include <stdlib.h>
+#include <pico/multicore.h>
+#include <stdio.h>
 
 private uint16_t *buffer;
 

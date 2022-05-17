@@ -1,10 +1,7 @@
 #ifndef PICO_CLOCK_BUTTON_HANDLER_H
 #define PICO_CLOCK_BUTTON_HANDLER_H
 
-#include "constants.h"
-#include "pico/stdlib.h"
-#include "hardware/irq.h"
-#include <stdio.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,9 +29,9 @@ extern ButtonState buttonStateB;
 extern ButtonState buttonStateX;
 extern ButtonState buttonStateY;
 
-void buttonHandler_init();
+extern void buttonHandler_init();
 
-void buttonHandler_loop();
+extern void buttonHandler_loop();
 
 #ifdef __cplusplus
 }
