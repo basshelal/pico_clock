@@ -10,7 +10,11 @@ extern "C" {
 
 extern void rtc_init();
 
-extern void rtc_setDateTimeChangedCallback(DateTimeChangedCallback callback);
+extern void rtc_setDateChangedCallback(const DateChangedCallback callback);
+
+extern void rtc_setTimeChangedCallback(const TimeChangedCallback callback);
+
+extern void rtc_setDateTimeChangedCallback(const DateTimeChangedCallback callback);
 
 extern bool rtc_isRunning();
 
@@ -28,11 +32,15 @@ extern uint8_t rtc_getHours();
 
 extern WeekDay rtc_getWeekday();
 
-extern uint8_t rtc_getDate();
+extern uint8_t rtc_getDay();
 
 extern uint8_t rtc_getMonth();
 
 extern uint8_t rtc_getYear();
+
+extern void rtc_getDate(Date *const result);
+
+extern void rtc_getTime(Time *const result);
 
 extern void rtc_getDateTime(DateTime *const result);
 
@@ -52,11 +60,15 @@ extern void rtc_setHours(const uint8_t hours);
 
 extern void rtc_setWeekday(const WeekDay weekday);
 
-extern void rtc_setDate(const uint8_t date);
+extern void rtc_setDay(const uint8_t day);
 
 extern void rtc_setMonth(const uint8_t month);
 
 extern void rtc_setYear(const uint8_t year);
+
+extern void rtc_setDate(const Date *const date);
+
+extern void rtc_setTime(const Time *const time);
 
 extern void rtc_setDateTime(const DateTime *const dateTime);
 

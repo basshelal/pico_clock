@@ -340,6 +340,7 @@ public float battery_getPowerMilliWatts() {
     return valueDec;
 }
 
+// TODO: 19-May-2022 @basshelal: Not working when restarted in battery mode
 public float battery_getPercentage() {
     if (isFullyCharged()) {
         current_is_charging = true;

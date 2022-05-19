@@ -26,15 +26,29 @@ typedef enum {
     SUNDAY = 7,
 } WeekDay;
 
-typedef struct DateTime {
+typedef struct Date {
+    WeekDay weekDay;
+    uint8_t day;
+    uint8_t month;
+    uint8_t year;
+} Date;
+
+typedef struct Time {
     uint8_t seconds;
     uint8_t minutes;
     uint8_t hours;
-    WeekDay weekDay;
-    uint8_t date;
-    uint8_t month;
-    uint8_t year;
+} Time;
+
+typedef struct DateTime {
+    Date date;
+    Time time;
 } DateTime;
+
+typedef void (*DateChangedCallback)(
+        const struct Date *const oldDate, const struct Date *const newDate);
+
+typedef void (*TimeChangedCallback)(
+        const struct Time *const oldTime, const struct Time *const newTime);
 
 typedef void (*DateTimeChangedCallback)(
         const struct DateTime *const oldDateTime, const struct DateTime *const newDateTime);

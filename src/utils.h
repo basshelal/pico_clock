@@ -159,16 +159,27 @@ inline float cyclesToSeconds(uint64_t cycles) {
     return (uint64_t) (((float) cycles) / cyclesPerSecond);
 }
 
-inline bool dateTimeEquals(const DateTime *const a, const DateTime *const b) {
+inline bool dateEquals(const Date *const a, const Date *const b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a->weekDay == b->weekDay &&
+           a->day == b->day &&
+           a->month == b->month &&
+           a->year == b->year;
+}
+
+inline bool timeEquals(const Time *const a, const Time *const b) {
     if (!a && !b) return true;
     if (!a || !b) return false;
     return a->seconds == b->seconds &&
            a->minutes == b->minutes &&
-           a->hours == b->hours &&
-           a->weekDay == b->weekDay &&
-           a->date == b->date &&
-           a->month == b->month &&
-           a->year == b->year;
+           a->hours == b->hours;
+}
+
+inline bool dateTimeEquals(const DateTime *const a, const DateTime *const b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return timeEquals(&a->time, &b->time) && dateEquals(&a->date, &b->date);
 }
 
 inline const char *weekdayToString(const WeekDay weekDay) {

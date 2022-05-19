@@ -129,9 +129,6 @@ public const Color HIGHLIGHT_COLOR = {.r = 200, .g = 20, .b = 20};
 #define TEXT_COLOR WHITE
 
 public void uiView_init() {
-    display_init();
-    display_setColor(WHITE);
-    display_setBacklight(100);
     uiView_clearAll();
 
     multicore_launch_core1(&uiView_launchUICore);

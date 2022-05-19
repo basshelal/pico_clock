@@ -1,11 +1,9 @@
+#include <stdlib.h>
 #include "ui_model.h"
 #include "../utils.h"
 #include "../types.h"
 #include "ui_view.h"
-#include "../peripherals/rtc.h"
-#include "../peripherals/battery.h"
 #include "../peripherals/peripherals.h"
-#include "../peripherals/display.h"
 
 #define DEFAULT_TIMEOUT_MILLIS 3500
 #define LONG_TIMEOUT_MILLIS 5000
@@ -24,50 +22,50 @@ private struct {
     struct {
         char timeText[9]; // 8 chars in HH:MM:SS format + 1 for string NULL terminator
         char dateText[14]; // 13 chars in DOW DD-MMM-YY + 1 for string NULL terminator
-        char batteryText[64];
+        char batteryText[11]; // 10 chars in 100% 4.20V + 1 for string NULL terminator
         char messageText[MESSAGE_BUFFER_SIZE];
     } buffers;
 } state;
 
 #define FORMAT_MESSAGE(fmt, args...) snprintf(state.buffers.messageText, MESSAGE_BUFFER_SIZE,fmt, ##args)
 
-private void updateText() {
+private void timeChanged(const struct Time *const oldTime,
+                         const struct Time *const newTime) {
+    state.dateTime->time = *newTime;
     sprintf(state.buffers.timeText, "%02i:%02i:%02i",
-            state.dateTime->hours, state.dateTime->minutes, state.dateTime->seconds);
-    sprintf(state.buffers.dateText, "%s %02i-%s-%02i",
-            weekdayToString(state.dateTime->weekDay),
-            state.dateTime->date, monthToString(state.dateTime->month), state.dateTime->year);
-    sprintf(state.buffers.batteryText, "%02.f%% %02.02fV %02.fmW %02.02fmV",
-            battery_getPercentage(),
-            battery_getBusVoltageVolts(),
-            battery_getPowerMilliWatts(),
-            battery_getShuntVoltageMilliVolts());
-    clear_console();
+            state.dateTime->time.hours, state.dateTime->time.minutes, state.dateTime->time.seconds);
     log("%s\n", state.buffers.timeText);
-    log("%s\n", state.buffers.dateText);
+    uiView_showClock(state.buffers.timeText);
+
+    // TODO: 19-May-2022 @basshelal: Use a callback based approach to battery updates similar to clock
+    sprintf(state.buffers.batteryText, "%02.f%% %01.02fV",
+            peripherals_batteryGetPercentage(),
+            peripherals_batteryGetVoltage());
     log("%s\n", state.buffers.batteryText);
 
     uiView_showBatteryPercentage(state.buffers.batteryText);
-    uiView_showClock(state.buffers.timeText);
-    uiView_showDate(state.buffers.dateText);
 
     uiView_requestUpdate();
 }
 
-private void dateTimeChanged(const struct DateTime *const oldDateTime,
-                             const struct DateTime *const newDateTime) {
-    state.dateTime = newDateTime;
-    updateText();
+private void dateChanged(const struct Date *const oldDate,
+                         const struct Date *const newDate) {
+    state.dateTime->date = *newDate;
+    sprintf(state.buffers.dateText, "%s %02i-%s-%02i",
+            weekdayToString(state.dateTime->date.weekDay),
+            state.dateTime->date.day, monthToString(state.dateTime->date.month), state.dateTime->date.year);
+    log("%s\n", state.buffers.dateText);
+    uiView_showDate(state.buffers.dateText);
+    uiView_requestUpdate();
 }
+
 
 public void uiModel_init() {
     uiView_init();
+    state.dateTime = calloc(sizeof(DateTime), 1);
     state.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
-    rtc_init();
-    if (!rtc_isRunning()) rtc_setIsRunning(true);
-    rtc_setDateTimeChangedCallback(dateTimeChanged);
-
-    battery_init();
+    peripherals_clockSetTimeChangedCallback(timeChanged);
+    peripherals_clockSetDateChangedCallback(dateChanged);
 }
 
 public void uiModel_buttonPressed() {
@@ -105,7 +103,7 @@ public void uiModel_setActivity(const UIActivity activity) {
             uiView_showBottomRightButton("-");
             uiView_showTopLeftButton(NULL);
             uiView_showBottomLeftButton(NULL);
-            FORMAT_MESSAGE("%u %%", display_getBacklight());
+            FORMAT_MESSAGE("%u %%", peripherals_displayGetBrightness());
             uiView_showMessage(state.buffers.messageText);
             uiView_requestUpdate();
             break;
@@ -129,20 +127,20 @@ public void uiModel_setActivity(const UIActivity activity) {
 }
 
 public void uiModel_incrementBrightness() {
-    const int backlight = display_getBacklight();
+    const int backlight = peripherals_displayGetBrightness();
     if (backlight <= 95) {
-        display_setBacklight(backlight + 5);
-        FORMAT_MESSAGE("%u %%", display_getBacklight());
+        peripherals_displaySetBrightness(backlight + 5);
+        FORMAT_MESSAGE("%u %%", peripherals_displayGetBrightness());
         uiView_showMessage(state.buffers.messageText);
         uiView_requestUpdate();
     }
 }
 
 public void uiModel_decrementBrightness() {
-    const int backlight = display_getBacklight();
+    const int backlight = peripherals_displayGetBrightness();
     if (backlight >= 5) {
-        display_setBacklight(backlight - 5);
-        FORMAT_MESSAGE("%u %%", display_getBacklight());
+        peripherals_displaySetBrightness(backlight - 5);
+        FORMAT_MESSAGE("%u %%", peripherals_displayGetBrightness());
         uiView_showMessage(state.buffers.messageText);
         uiView_requestUpdate();
     }
@@ -178,5 +176,4 @@ public void uiModel_loop() {
     if (state.millisSinceLastPress > state.timeoutMillis) {
         uiModel_setActivity(HIDDEN);
     }
-    rtc_loop();
 }

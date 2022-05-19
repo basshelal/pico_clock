@@ -17,6 +17,7 @@ public void display_init() {
     display.init();
     display_clear();
     display.set_font(&font8);
+    display_setBacklight(100);
 }
 
 public void display_clear() {

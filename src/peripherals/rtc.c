@@ -17,9 +17,12 @@
 #define REG_STATUS 0x0F
 #define I2C_TIMEOUT_US 5000
 
+private bool rtcIsRunning;
 private uint32_t rtcBaudrate;
 private DateTime currentDateTime;
 private DateTime oldDateTime;
+private DateChangedCallback dateChangedCallback;
+private TimeChangedCallback timeChangedCallback;
 private DateTimeChangedCallback dateTimeChangedCallback;
 
 private uint8_t readRegister(const uint8_t reg) {
@@ -35,6 +38,7 @@ private void writeRegister(const uint8_t reg, const uint8_t value) {
 }
 
 public void rtc_init() {
+    rtcIsRunning = true;
     gpio_set_function(RTC_SCLK_PIN, GPIO_FUNC_I2C);
     gpio_set_function(RTC_SDA_PIN, GPIO_FUNC_I2C);
     gpio_pull_up(RTC_SCLK_PIN);
@@ -42,12 +46,20 @@ public void rtc_init() {
     rtcBaudrate = i2c_init(RTC_I2C, RTC_BAUD_RATE);
 }
 
-public void rtc_setDateTimeChangedCallback(DateTimeChangedCallback callback) {
+public void rtc_setDateChangedCallback(const DateChangedCallback callback) {
+    dateChangedCallback = callback;
+}
+
+public void rtc_setTimeChangedCallback(const TimeChangedCallback callback) {
+    timeChangedCallback = callback;
+}
+
+public void rtc_setDateTimeChangedCallback(const DateTimeChangedCallback callback) {
     dateTimeChangedCallback = callback;
 }
 
 public bool rtc_isRunning() {
-    return !rtc_isErrored() && rtc_isBatteryEnabled();
+    return rtcIsRunning;
 }
 
 public bool rtc_isErrored() {
@@ -133,7 +145,7 @@ public WeekDay rtc_getWeekday() {
     return (WeekDay) weekday;
 }
 
-public uint8_t rtc_getDate() {
+public uint8_t rtc_getDay() {
     const uint8_t rawDate = readRegister(REG_DATE);
     // first 2 bits are blank/ignored
 
@@ -173,20 +185,29 @@ public uint8_t rtc_getYear() {
     return year;
 }
 
-public void rtc_getDateTime(DateTime *const result) {
+public void rtc_getDate(Date *const result) {
     if (!result) return;
-    result->seconds = rtc_getSeconds();
-    result->minutes = rtc_getMinutes();
-    result->hours = rtc_getHours();
     result->weekDay = rtc_getWeekday();
-    result->date = rtc_getDate();
+    result->day = rtc_getDay();
     result->month = rtc_getMonth();
     result->year = rtc_getYear();
 }
 
+public void rtc_getTime(Time *const result) {
+    if (!result) return;
+    result->seconds = rtc_getSeconds();
+    result->minutes = rtc_getMinutes();
+    result->hours = rtc_getHours();
+}
+
+public void rtc_getDateTime(DateTime *const result) {
+    if (!result) return;
+    rtc_getDate(&result->date);
+    rtc_getTime(&result->time);
+}
+
 public void rtc_setIsRunning(const bool isRunning) {
-    rtc_setIsErrored(!isRunning);
-    rtc_setIsBatteryEnabled(isRunning);
+    rtcIsRunning = isRunning;
 }
 
 public void rtc_setIsErrored(const bool isErrored) {
@@ -271,18 +292,18 @@ public void rtc_setWeekday(const WeekDay weekday) {
     writeRegister(REG_WEEKDAY, value);
 }
 
-public void rtc_setDate(const uint8_t date) {
-    const uint8_t clampedDate = (date < 1 || date > 31) ? 1 : date;
-    // if user gave date out of range, set it to 1
+public void rtc_setDay(const uint8_t day) {
+    const uint8_t clampedDate = (day < 1 || day > 31) ? 1 : day;
+    // if user gave day out of range, set it to 1
 
     const uint8_t dateTens = clampedDate / 10;
     const uint8_t dateUnits = clampedDate % 10;
 
     uint8_t value = set_bits(0, 2, 3, dateTens);
-    // bits 2-3 are the date tens part
+    // bits 2-3 are the day tens part
 
     value = set_bits(value, 4, 7, dateUnits);
-    // bits 4-7 are the date units part
+    // bits 4-7 are the day units part
 
     writeRegister(REG_DATE, value);
 }
@@ -319,22 +340,39 @@ public void rtc_setYear(const uint8_t year) {
     writeRegister(REG_YEAR, value);
 }
 
+public void rtc_setDate(const Date *const date) {
+    if (!date) return;
+    rtc_setWeekday(date->weekDay);
+    rtc_setDay(date->day);
+    rtc_setMonth(date->month);
+    rtc_setYear(date->year);
+}
+
+public void rtc_setTime(const Time *const time) {
+    if (!time) return;
+    rtc_setSeconds(time->seconds);
+    rtc_setMinutes(time->minutes);
+    rtc_setHours(time->hours);
+}
+
 public void rtc_setDateTime(const DateTime *const dateTime) {
     if (!dateTime) return;
-    rtc_setSeconds(dateTime->seconds);
-    rtc_setMinutes(dateTime->minutes);
-    rtc_setHours(dateTime->hours);
-    rtc_setWeekday(dateTime->weekDay);
-    rtc_setDate(dateTime->date);
-    rtc_setMonth(dateTime->month);
-    rtc_setYear(dateTime->year);
+    rtc_setDate(&dateTime->date);
+    rtc_setTime(&dateTime->time);
 }
 
 public void rtc_loop() {
-    rtc_getDateTime(&currentDateTime);
-    if (!dateTimeEquals(&oldDateTime, &currentDateTime)) {
-        if (dateTimeChangedCallback)
-            dateTimeChangedCallback(&oldDateTime, &currentDateTime);
-        oldDateTime = currentDateTime;
+    if (rtcIsRunning) {
+        rtc_getDateTime(&currentDateTime);
+        if (!dateTimeEquals(&oldDateTime, &currentDateTime)) {
+            if (!dateEquals(&oldDateTime.date, &currentDateTime.date)) {
+                if (dateChangedCallback) dateChangedCallback(&oldDateTime.date, &currentDateTime.date);
+            }
+            if (!timeEquals(&oldDateTime.time, &currentDateTime.time)) {
+                if (timeChangedCallback) timeChangedCallback(&oldDateTime.time, &currentDateTime.time);
+            }
+            if (dateTimeChangedCallback) dateTimeChangedCallback(&oldDateTime, &currentDateTime);
+            oldDateTime = currentDateTime;
+        }
     }
 }
