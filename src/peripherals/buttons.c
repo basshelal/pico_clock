@@ -1,4 +1,4 @@
-#include "button_handler.h"
+#include "buttons.h"
 #include "../utils.h"
 #include "pico/stdlib.h"
 
@@ -44,7 +44,7 @@ private inline void handleHeld(ButtonState *const state) {
     }
 }
 
-public void buttonHandler_init() {
+public void buttons_init() {
     gpio_set_dir(A_BUTTON_PIN, GPIO_IN);
     gpio_set_function(A_BUTTON_PIN, GPIO_FUNC_SIO);
     gpio_pull_up(A_BUTTON_PIN);
@@ -73,7 +73,7 @@ public void buttonHandler_init() {
     buttonStateY.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
 }
 
-public void buttonHandler_loop() {
+public void buttons_loop() {
     handleHeld(&buttonStateA);
     handleHeld(&buttonStateB);
     handleHeld(&buttonStateX);

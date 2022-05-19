@@ -17,6 +17,8 @@ extern float battery_getPowerMilliWatts();
 
 extern float battery_getPercentage();
 
+extern void battery_loop();
+
 #ifdef __cplusplus
 }
 #endif

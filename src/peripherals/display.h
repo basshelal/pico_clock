@@ -14,7 +14,7 @@ extern "C" {
 
 #define DISPLAY_AREA (DISPLAY_WIDTH * DISPLAY_HEIGHT)
 
-extern void display_init(uint16_t *const buffer);
+extern void display_init();
 
 extern void display_clear();
 
@@ -32,6 +32,8 @@ extern void display_setBacklight(const uint8_t percentage);
 extern uint8_t display_getBacklight();
 
 extern int display_getStringWidth(const char *string, const int scale);
+
+extern void display_loop();
 
 #ifdef __cplusplus
 }

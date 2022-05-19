@@ -7,10 +7,12 @@
 
 using namespace pimoroni;
 
+private uint16_t *buffer;
 private PicoDisplay2 display = NULL;
 private uint8_t brightnessPercentage;
 
-public void display_init(uint16_t *const buffer) {
+public void display_init() {
+    buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
     display = PicoDisplay2(buffer);
     display.init();
     display_clear();
@@ -54,4 +56,8 @@ public uint8_t display_getBacklight() {
 
 public int display_getStringWidth(const char *string, const int scale) {
     return bitmap::measure_text(&font8, string, scale);
+}
+
+public void display_loop() {
+
 }

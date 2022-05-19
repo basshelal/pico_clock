@@ -362,3 +362,7 @@ public float battery_getPercentage() {
     current_percentage = result;
     return result;
 }
+
+public void battery_loop() {
+
+}

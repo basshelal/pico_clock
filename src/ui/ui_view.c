@@ -4,7 +4,7 @@
 #include <pico/multicore.h>
 #include <stdio.h>
 
-private uint16_t *buffer;
+#include "../peripherals/display.h"
 
 private const uint8_t outsideMargin = 10;
 private const uint8_t charWidth = 6;
@@ -129,8 +129,7 @@ public const Color HIGHLIGHT_COLOR = {.r = 200, .g = 20, .b = 20};
 #define TEXT_COLOR WHITE
 
 public void uiView_init() {
-    buffer = (uint16_t *) malloc(DISPLAY_AREA * sizeof(uint16_t));
-    display_init(buffer);
+    display_init();
     display_setColor(WHITE);
     display_setBacklight(100);
     uiView_clearAll();

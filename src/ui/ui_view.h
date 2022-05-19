@@ -2,7 +2,6 @@
 #define PICO_CLOCK_UI_VIEW_H
 
 #include "../types.h"
-#include "../peripherals/display.h"
 
 /**
  * The UIView is a single module that is responsible for any manipulation of the screen.

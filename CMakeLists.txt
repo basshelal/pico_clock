@@ -24,8 +24,7 @@ set(SRC_FILES
         src/peripherals/rtc.h src/peripherals/rtc.c
         src/peripherals/battery.h src/peripherals/battery.c
         src/peripherals/display.h src/peripherals/display.cpp
-
-        src/middleware/button_handler.h src/middleware/button_handler.c
+        src/peripherals/buttons.h src/peripherals/buttons.c
 
         src/ui/ui.h src/ui/ui.c
         src/ui/ui_model.h src/types.h src/ui/ui_model.c

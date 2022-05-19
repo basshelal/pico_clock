@@ -1,6 +1,6 @@
 #include "ui_controller.h"
 #include "../utils.h"
-#include "../middleware/button_handler.h"
+#include "../peripherals/buttons.h"
 #include "ui_view.h"
 #include "ui_model.h"
 
@@ -120,7 +120,7 @@ private void uiController_heldCallbackY(const ButtonState *const buttonState) {
 
 public void uiController_init() {
     uiModel_init();
-    buttonHandler_init();
+    buttons_init();
 
     buttonStateA.changedCallback = uiController_changedCallbackA;
     buttonStateA.heldCallback = uiController_heldCallbackA;
@@ -136,6 +136,6 @@ public void uiController_init() {
 }
 
 public void uiController_loop() {
-    buttonHandler_loop();
+    buttons_loop();
     uiModel_loop();
 }

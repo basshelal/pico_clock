@@ -1,5 +1,5 @@
-#ifndef PICO_CLOCK_BUTTON_HANDLER_H
-#define PICO_CLOCK_BUTTON_HANDLER_H
+#ifndef PICO_CLOCK_BUTTONS_H
+#define PICO_CLOCK_BUTTONS_H
 
 #include <stdbool.h>
 
@@ -29,12 +29,12 @@ extern ButtonState buttonStateB;
 extern ButtonState buttonStateX;
 extern ButtonState buttonStateY;
 
-extern void buttonHandler_init();
+extern void buttons_init();
 
-extern void buttonHandler_loop();
+extern void buttons_loop();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //PICO_CLOCK_BUTTON_HANDLER_H
+#endif //PICO_CLOCK_BUTTONS_H

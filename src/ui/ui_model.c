@@ -4,6 +4,8 @@
 #include "ui_view.h"
 #include "../peripherals/rtc.h"
 #include "../peripherals/battery.h"
+#include "../peripherals/peripherals.h"
+#include "../peripherals/display.h"
 
 #define DEFAULT_TIMEOUT_MILLIS 3500
 #define LONG_TIMEOUT_MILLIS 5000
