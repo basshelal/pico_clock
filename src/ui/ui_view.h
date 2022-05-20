@@ -37,6 +37,10 @@ extern void uiView_hideClockHighlight();
 
 extern void uiView_showClock(const char *text);
 
+extern void uiView_showDateHighlight(const int fromIndex, const int toIndex, const Color color);
+
+extern void uiView_hideDateHighlight();
+
 extern void uiView_showDate(const char *text);
 
 extern void uiView_showMessage(const char *text);

@@ -17,8 +17,18 @@ private struct {
     UIActivity activity;
     uint64_t timeoutMillis;
     struct {
-        int highlightIndex;
+        enum {
+            HOURS = 0, MINUTES = 3, SECONDS = 6
+        } field;
+        Time time;
     } setTimeState;
+    struct {
+        enum {
+            WEEKDAY = 0, DAY = 4, MONTH = 7, YEAR = 11
+        } field;
+        uint8_t fieldLength;
+        Date date;
+    } setDateState;
     struct {
         char timeText[9]; // 8 chars in HH:MM:SS format + 1 for string NULL terminator
         char dateText[14]; // 13 chars in DOW DD-MMM-YY + 1 for string NULL terminator
@@ -84,9 +94,9 @@ public void uiModel_setActivity(const UIActivity activity) {
             state.countingMillisSinceLastPress = false;
             state.millisSinceLastPress = 0;
             state.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
-            state.setTimeState.highlightIndex = 0;
             uiView_clearDetails();
             uiView_hideClockHighlight();
+            uiView_hideDateHighlight();
             uiView_requestUpdate();
             break;
         case DETAILS:
@@ -110,16 +120,26 @@ public void uiModel_setActivity(const UIActivity activity) {
         case SET_TIME:
             state.activity = SET_TIME;
             state.timeoutMillis = LONG_TIMEOUT_MILLIS;
+            state.setTimeState.field = SECONDS;
             uiView_showTopLeftButton("<");
             uiView_showBottomLeftButton(">");
             uiView_showTopRightButton("+");
             uiView_showBottomRightButton("-");
             uiView_showMessage("Set time");
-            state.setTimeState.highlightIndex = -1;
             uiModel_incrementClockHighlight();
             uiView_requestUpdate();
             break;
         case SET_DATE:
+            state.activity = SET_DATE;
+            state.timeoutMillis = LONG_TIMEOUT_MILLIS;
+            state.setDateState.field = YEAR;
+            uiView_showTopLeftButton("<");
+            uiView_showBottomLeftButton(">");
+            uiView_showTopRightButton("+");
+            uiView_showBottomRightButton("-");
+            uiView_showMessage("Set date");
+            uiModel_incrementDateHighlight();
+            uiView_requestUpdate();
             break;
         case SET_ALARM:
             break;
@@ -147,25 +167,85 @@ public void uiModel_decrementBrightness() {
 }
 
 public void uiModel_incrementClockHighlight() {
-    if (state.setTimeState.highlightIndex < 7) {
-        state.setTimeState.highlightIndex++;
-        if (state.setTimeState.highlightIndex == 2 || state.setTimeState.highlightIndex == 5)
-            state.setTimeState.highlightIndex++;
-        uiView_showClockHighlight(state.setTimeState.highlightIndex,
-                                  state.setTimeState.highlightIndex + 1, HIGHLIGHT_COLOR);
-        uiView_requestUpdate();
+    switch (state.setTimeState.field) {
+        case HOURS:
+            state.setTimeState.field = MINUTES;
+            break;
+        case MINUTES:
+            state.setTimeState.field = SECONDS;
+            break;
+        case SECONDS:
+            state.setTimeState.field = HOURS;
+            break;
     }
+    uiView_showClockHighlight(state.setTimeState.field,
+                              state.setTimeState.field + 2, HIGHLIGHT_COLOR);
+    uiView_requestUpdate();
 }
 
-public void uiModel_decrementRightClockHighlight() {
-    if (state.setTimeState.highlightIndex > 0) {
-        state.setTimeState.highlightIndex--;
-        if (state.setTimeState.highlightIndex == 2 || state.setTimeState.highlightIndex == 5)
-            state.setTimeState.highlightIndex--;
-        uiView_showClockHighlight(state.setTimeState.highlightIndex,
-                                  state.setTimeState.highlightIndex + 1, HIGHLIGHT_COLOR);
-        uiView_requestUpdate();
+public void uiModel_decrementClockHighlight() {
+    switch (state.setTimeState.field) {
+        case HOURS:
+            state.setTimeState.field = SECONDS;
+            break;
+        case MINUTES:
+            state.setTimeState.field = HOURS;
+            break;
+        case SECONDS:
+            state.setTimeState.field = MINUTES;
+            break;
     }
+    uiView_showClockHighlight(state.setTimeState.field,
+                              state.setTimeState.field + 2, HIGHLIGHT_COLOR);
+    uiView_requestUpdate();
+}
+
+public void uiModel_incrementDateHighlight() {
+    switch (state.setDateState.field) {
+        case WEEKDAY:
+            state.setDateState.field = DAY;
+            state.setDateState.fieldLength = 2;
+            break;
+        case DAY:
+            state.setDateState.field = MONTH;
+            state.setDateState.fieldLength = 3;
+            break;
+        case MONTH:
+            state.setDateState.field = YEAR;
+            state.setDateState.fieldLength = 2;
+            break;
+        case YEAR:
+            state.setDateState.field = WEEKDAY;
+            state.setDateState.fieldLength = 3;
+            break;
+    }
+    uiView_showDateHighlight(state.setDateState.field,
+                             state.setDateState.field + state.setDateState.fieldLength, HIGHLIGHT_COLOR);
+    uiView_requestUpdate();
+}
+
+public void uiModel_decrementDateHighlight() {
+    switch (state.setDateState.field) {
+        case WEEKDAY:
+            state.setDateState.field = YEAR;
+            state.setDateState.fieldLength = 2;
+            break;
+        case DAY:
+            state.setDateState.field = WEEKDAY;
+            state.setDateState.fieldLength = 3;
+            break;
+        case MONTH:
+            state.setDateState.field = DAY;
+            state.setDateState.fieldLength = 2;
+            break;
+        case YEAR:
+            state.setDateState.field = MONTH;
+            state.setDateState.fieldLength = 3;
+            break;
+    }
+    uiView_showDateHighlight(state.setDateState.field,
+                             state.setDateState.field + state.setDateState.fieldLength, HIGHLIGHT_COLOR);
+    uiView_requestUpdate();
 }
 
 public void uiModel_loop() {

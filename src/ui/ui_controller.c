@@ -16,9 +16,10 @@ private void uiController_pressedA() {
         case SET_BRIGHTNESS:
             break;
         case SET_TIME:
-            uiModel_decrementRightClockHighlight();
+            uiModel_decrementClockHighlight();
             break;
         case SET_DATE:
+            uiModel_decrementDateHighlight();
             break;
         case SET_ALARM:
             break;
@@ -40,6 +41,7 @@ private void uiController_pressedB() {
             uiModel_incrementClockHighlight();
             break;
         case SET_DATE:
+            uiModel_incrementDateHighlight();
             break;
         case SET_ALARM:
             break;
@@ -53,6 +55,7 @@ private void uiController_pressedX() {
             uiModel_setActivity(DETAILS);
             break;
         case DETAILS:
+            uiModel_setActivity(SET_DATE);
             break;
         case SET_BRIGHTNESS:
             uiModel_incrementBrightness();

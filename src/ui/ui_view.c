@@ -6,6 +6,8 @@
 
 #include "../peripherals/display.h"
 
+// TODO: 20-May-2022 @basshelal: Remove hardcoded numbers from this file!
+
 private const uint8_t outsideMargin = 10;
 private const uint8_t charWidth = 6;
 private const uint8_t charHeight = 8;
@@ -40,14 +42,25 @@ private Rectangle dateRect = {
         .x=outsideMargin * clockTextScale,
         .y=outsideMargin * 14,
         .w=12 * charWidth * dateTextScale,
-        .h=1 * charHeight * dateTextScale};
+        .h=1 * charHeight * dateTextScale
+};
+private const char *dateLastText;
+private struct {
+    Rectangle rectangle;
+    bool hasHighlight;
+    int fromIndex;
+    int toIndex;
+    Color color;
+    char *buffer;
+} dateHighlightState;
 
 private const uint8_t messageTextScale = 2;
 private Rectangle messageRect = {
         .x=outsideMargin * clockTextScale,
         .y=outsideMargin * 18,
         .w=12 * charWidth * messageTextScale,
-        .h=3 * charHeight * messageTextScale};
+        .h=3 * charHeight * messageTextScale
+};
 
 private const uint8_t buttonTextScale = 2;
 
@@ -135,7 +148,8 @@ public void uiView_init() {
     uiView_requestUpdate();
     uiView_setBrightness(100);
 
-    clockHighlightState.buffer = (char *) calloc(sizeof(char), 8);
+    clockHighlightState.buffer = (char *) calloc(sizeof(char), 9);
+    dateHighlightState.buffer = (char *) calloc(sizeof(char), 14);
 }
 
 public void uiView_clearAll() {
@@ -199,11 +213,39 @@ public void uiView_showClock(const char *text) {
     }
 }
 
+public void uiView_showDateHighlight(const int fromIndex, const int toIndex, const Color color) {
+    dateHighlightState.hasHighlight = true;
+    dateHighlightState.fromIndex = fromIndex;
+    dateHighlightState.toIndex = toIndex;
+    dateHighlightState.color = color;
+    uiView_showDate(dateLastText);
+}
+
+public void uiView_hideDateHighlight() {
+    dateHighlightState.hasHighlight = false;
+    uiView_showDate(dateLastText);
+}
+
 public void uiView_showDate(const char *text) {
+    dateLastText = text;
     uiView_clearRectangle(dateRect);
-    if (text) {
+    if (text != NULL) {
         dateRect.w = display_getStringWidth(text, dateTextScale);
         dateRect.x = (DISPLAY_WIDTH / 2) - (dateRect.w / 2);
+        if (dateHighlightState.hasHighlight) {
+            dateHighlightState.rectangle.y = dateRect.y;
+            dateHighlightState.rectangle.h = dateRect.h;
+
+            substring(text, 0, dateHighlightState.fromIndex, dateHighlightState.buffer);
+            int leftWidth = display_getStringWidth(dateHighlightState.buffer, dateTextScale);
+            substring(text, dateHighlightState.toIndex, 13, dateHighlightState.buffer);
+            int rightWidth = display_getStringWidth(dateHighlightState.buffer, dateTextScale);
+            dateHighlightState.rectangle.x = dateRect.x + leftWidth;
+            dateHighlightState.rectangle.w = dateRect.w - (rightWidth + leftWidth);
+
+            display_setColor(dateHighlightState.color);
+            display_setRectangle(dateHighlightState.rectangle);
+        }
         display_setColor(TEXT_COLOR);
         display_setText(text, dateRect.x, dateRect.y,
                         DISPLAY_WIDTH - outsideMargin, dateTextScale);

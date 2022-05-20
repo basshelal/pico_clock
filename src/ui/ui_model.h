@@ -24,7 +24,11 @@ extern void uiModel_decrementBrightness();
 
 extern void uiModel_incrementClockHighlight();
 
-extern void uiModel_decrementRightClockHighlight();
+extern void uiModel_decrementClockHighlight();
+
+extern void uiModel_incrementDateHighlight();
+
+extern void uiModel_decrementDateHighlight();
 
 extern void uiModel_loop();
 

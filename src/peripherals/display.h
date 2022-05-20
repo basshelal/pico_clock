@@ -22,8 +22,8 @@ extern void display_update();
 
 extern void display_setColor(const Color color);
 
-extern void
-display_setText(const char *text, const int32_t x, const int32_t y, const int32_t wrap, const uint8_t scale);
+extern void display_setText(const char *text, const int32_t x, const int32_t y,
+                            const int32_t wrap, const uint8_t scale);
 
 extern void display_setRectangle(const Rectangle rectangle);
 

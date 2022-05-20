@@ -25,6 +25,22 @@ public void peripherals_clockSetRunning(bool isRunning) {
     rtc_setIsRunning(isRunning);
 }
 
+public void peripherals_clockSetDate(const Date *date) {
+    rtc_setDate(date);
+}
+
+public void peripherals_clockGetDate(Date *date) {
+    rtc_getDate(date);
+}
+
+public void peripherals_clockSetTime(const Time *time) {
+    rtc_setTime(time);
+}
+
+public void peripherals_clockGetTime(Time *time) {
+    rtc_getTime(time);
+}
+
 public void peripherals_clockSetDateTime(const DateTime *dateTime) {
     rtc_setDateTime(dateTime);
 }

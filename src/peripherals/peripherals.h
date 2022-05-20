@@ -11,6 +11,14 @@ extern void peripherals_displaySetBrightness(uint8_t percentage);
 
 extern void peripherals_clockSetRunning(bool isRunning);
 
+extern void peripherals_clockSetDate(const Date *date);
+
+extern void peripherals_clockGetDate(Date *date);
+
+extern void peripherals_clockSetTime(const Time *time);
+
+extern void peripherals_clockGetTime(Time *time);
+
 extern void peripherals_clockSetDateTime(const DateTime *dateTime);
 
 extern void peripherals_clockGetDateTime(DateTime *dateTime);
