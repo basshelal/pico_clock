@@ -19,7 +19,7 @@ private void uiController_pressedA() {
             uiModel_incrementClockHighlight();
             break;
         case SET_DATE:
-            uiModel_decrementDateHighlight();
+            uiModel_incrementDateHighlight();
             break;
         case SET_ALARM:
             break;
@@ -41,7 +41,7 @@ private void uiController_pressedB() {
             uiModel_cancelSetTime();
             break;
         case SET_DATE:
-            uiModel_incrementDateHighlight();
+            uiModel_cancelSetDate();
             break;
         case SET_ALARM:
             break;
@@ -64,6 +64,7 @@ private void uiController_pressedX() {
             uiModel_incrementSetTime();
             break;
         case SET_DATE:
+            uiModel_incrementSetDate();
             break;
         case SET_ALARM:
             break;
@@ -85,6 +86,7 @@ private void uiController_pressedY() {
             uiModel_acceptSetTime();
             break;
         case SET_DATE:
+            uiModel_acceptSetDate();
             break;
         case SET_ALARM:
             break;

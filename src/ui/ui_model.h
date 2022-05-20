@@ -38,6 +38,14 @@ extern void uiModel_acceptSetTime();
 
 extern void uiModel_cancelSetTime();
 
+extern void uiModel_incrementSetDate();
+
+extern void uiModel_decrementSetDate();
+
+extern void uiModel_acceptSetDate();
+
+extern void uiModel_cancelSetDate();
+
 extern void uiModel_loop();
 
 #endif //PICO_CLOCK_UI_MODEL_H

@@ -29,7 +29,7 @@ typedef enum {
 typedef struct Date {
     WeekDay weekDay;
     uint8_t day;
-    uint8_t month;
+    uint8_t month; // 1 -12
     uint8_t year;
 } Date;
 

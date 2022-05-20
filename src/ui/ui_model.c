@@ -61,17 +61,59 @@ private void timeChanged(const struct Time *const oldTime,
     uiView_requestUpdate();
 }
 
+private void formatDate(const Date *date, char *buffer) {
+    sprintf(buffer, "%s %02i-%s-%02i",
+            weekdayToString(date->weekDay), date->day, monthToString(date->month), date->year);
+}
+
 private void dateChanged(const struct Date *const oldDate,
                          const struct Date *const newDate) {
     state.dateTime->date = *newDate;
-    sprintf(state.buffers.dateText, "%s %02i-%s-%02i",
-            weekdayToString(state.dateTime->date.weekDay),
-            state.dateTime->date.day, monthToString(state.dateTime->date.month), state.dateTime->date.year);
+    formatDate(&state.dateTime->date, state.buffers.dateText);
     log("%s\n", state.buffers.dateText);
     uiView_showDate(state.buffers.dateText);
     uiView_requestUpdate();
 }
 
+private uint8_t lastDayOfMonth(Date *date) {
+    bool isLeapYear = (date->year % 4) == 0;
+    switch (date->month) {
+        case 1: // January
+            return 31;
+        case 2: // February
+            return isLeapYear ? 29 : 28;
+        case 3: // March
+            return 31;
+        case 4: // April
+            return 30;
+        case 5: // May
+            return 31;
+        case 6: // June
+            return 30;
+        case 7: // July
+            return 31;
+        case 8: // August
+            return 31;
+        case 9: // September
+            return 30;
+        case 10: // October
+            return 31;
+        case 11: // November
+            return 30;
+        case 12: // December
+            return 31;
+        default:
+            return 0;
+    }
+}
+
+private bool fixDate(Date *date) {
+    if (date->day > lastDayOfMonth(date)) {
+        date->day = lastDayOfMonth(date);
+        return true;
+    }
+    return false;
+}
 
 public void uiModel_init() {
     uiView_init();
@@ -101,6 +143,7 @@ public void uiModel_setActivity(const UIActivity activity) {
             uiView_hideClockHighlight();
             uiView_hideDateHighlight();
             uiModel_cancelSetTime();
+            uiModel_cancelSetDate();
             uiView_requestUpdate();
             break;
         case DETAILS:
@@ -126,9 +169,7 @@ public void uiModel_setActivity(const UIActivity activity) {
             state.setTimeState.field = SECONDS;
             Time currentTime;
             peripherals_clockGetTime(&currentTime);
-            state.setTimeState.time.hours = currentTime.hours;
-            state.setTimeState.time.minutes = currentTime.minutes;
-            state.setTimeState.time.seconds = currentTime.seconds;
+            state.setTimeState.time = currentTime;
             peripherals_clockSetRunning(false);
             uiView_showTopLeftButton(">");
             uiView_showTopRightButton("+");
@@ -142,10 +183,14 @@ public void uiModel_setActivity(const UIActivity activity) {
             state.activity = SET_DATE;
             state.timeoutMillis = LONG_TIMEOUT_MILLIS;
             state.setDateState.field = YEAR;
-            uiView_showTopLeftButton("<");
-            uiView_showBottomLeftButton(">");
+            Date currentDate;
+            peripherals_clockGetDate(&currentDate);
+            state.setDateState.date = currentDate;
+            peripherals_clockSetRunning(false);
+            uiView_showTopLeftButton(">");
             uiView_showTopRightButton("+");
-            uiView_showBottomRightButton("-");
+            uiView_showBottomLeftButton("x");
+            uiView_showBottomRightButton("OK");
             uiView_showMessage("Set date");
             uiModel_incrementDateHighlight();
             uiView_requestUpdate();
@@ -307,16 +352,83 @@ public void uiModel_acceptSetTime() {
 }
 
 public void uiModel_cancelSetTime() {
-    // TODO: 20-May-2022 @basshelal: Breaks because infinite loop
     peripherals_clockSetRunning(true);
+    uiView_forceUpdate();
+    if (state.activity != HIDDEN) uiModel_setActivity(HIDDEN);
+}
+
+public void uiModel_incrementSetDate() {
+    switch (state.setDateState.field) {
+        case WEEKDAY:
+            if (state.setDateState.date.weekDay < SUNDAY) state.setDateState.date.weekDay++;
+            else state.setDateState.date.weekDay = MONDAY;
+            break;
+        case DAY:
+            if (state.setDateState.date.day < lastDayOfMonth(&state.setDateState.date))
+                state.setDateState.date.day++;
+            else state.setDateState.date.day = 1;
+            break;
+        case MONTH:
+            if (state.setDateState.date.month < 12) state.setDateState.date.month++;
+            else state.setDateState.date.month = 1;
+            break;
+        case YEAR:
+            if (state.setDateState.date.year < 99) state.setDateState.date.year++;
+            else state.setDateState.date.year = 0;
+            break;
+    }
+    fixDate(&state.setDateState.date);
+    formatDate(&state.setDateState.date, state.buffers.dateText);
+    uiView_showDate(state.buffers.dateText);
+    uiView_requestUpdate();
+}
+
+public void uiModel_decrementSetDate() {
+    switch (state.setDateState.field) {
+        case WEEKDAY:
+            if (state.setDateState.date.weekDay > MONDAY) state.setDateState.date.weekDay--;
+            else state.setDateState.date.weekDay = SUNDAY;
+            break;
+        case DAY:
+            if (state.setDateState.date.day > 1) state.setDateState.date.day--;
+            else state.setDateState.date.day = lastDayOfMonth(&state.setDateState.date);
+            break;
+        case MONTH:
+            if (state.setDateState.date.month > 0) state.setDateState.date.month--;
+            else state.setDateState.date.month = 11;
+            break;
+        case YEAR:
+            if (state.setDateState.date.year > 0) state.setDateState.date.year--;
+            else state.setDateState.date.year = 99;
+            break;
+    }
+    fixDate(&state.setDateState.date);
+    formatDate(&state.setDateState.date, state.buffers.dateText);
+    uiView_showDate(state.buffers.dateText);
+    uiView_requestUpdate();
+}
+
+public void uiModel_acceptSetDate() {
+    peripherals_clockSetDate(&state.setDateState.date);
+    peripherals_clockSetRunning(true);
+    formatDate(&state.setDateState.date, state.buffers.dateText);
+    uiView_showDate(state.buffers.dateText);
     uiView_forceUpdate();
     uiModel_setActivity(HIDDEN);
 }
 
+public void uiModel_cancelSetDate() {
+    peripherals_clockSetRunning(true);
+    Date date;
+    peripherals_clockGetDate(&date);
+    formatDate(&date, state.buffers.dateText);
+    uiView_showDate(state.buffers.dateText);
+    uiView_forceUpdate();
+    if (state.activity != HIDDEN) uiModel_setActivity(HIDDEN);
+}
+
 public void uiModel_loop() {
     uiView_loop();
-    // TODO: 20-May-2022 @basshelal: The check for inactivity should probably be in controller because it's a user
-    //  action
     if (state.countingMillisSinceLastPress) {
         state.millisSinceLastPress += MILLIS_PER_CYCLE_MAIN_CORE;
     }
