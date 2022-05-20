@@ -39,11 +39,14 @@ private struct {
 
 #define FORMAT_MESSAGE(fmt, args...) snprintf(state.buffers.messageText, MESSAGE_BUFFER_SIZE,fmt, ##args)
 
+private void formatTime(const Time *time, char *buffer) {
+    sprintf(buffer, "%02i:%02i:%02i", time->hours, time->minutes, time->seconds);
+}
+
 private void timeChanged(const struct Time *const oldTime,
                          const struct Time *const newTime) {
     state.dateTime->time = *newTime;
-    sprintf(state.buffers.timeText, "%02i:%02i:%02i",
-            state.dateTime->time.hours, state.dateTime->time.minutes, state.dateTime->time.seconds);
+    formatTime(newTime, state.buffers.timeText);
     log("%s\n", state.buffers.timeText);
     uiView_showClock(state.buffers.timeText);
 
@@ -97,6 +100,7 @@ public void uiModel_setActivity(const UIActivity activity) {
             uiView_clearDetails();
             uiView_hideClockHighlight();
             uiView_hideDateHighlight();
+            uiModel_cancelSetTime();
             uiView_requestUpdate();
             break;
         case DETAILS:
@@ -104,7 +108,6 @@ public void uiModel_setActivity(const UIActivity activity) {
             uiView_showTopLeftButton("SET BRIT");
             uiView_showBottomLeftButton("SET TIME");
             uiView_showTopRightButton("SET DATE");
-            uiView_showBottomRightButton("SET ALRM");
             uiView_requestUpdate();
             break;
         case SET_BRIGHTNESS:
@@ -121,10 +124,16 @@ public void uiModel_setActivity(const UIActivity activity) {
             state.activity = SET_TIME;
             state.timeoutMillis = LONG_TIMEOUT_MILLIS;
             state.setTimeState.field = SECONDS;
-            uiView_showTopLeftButton("<");
-            uiView_showBottomLeftButton(">");
+            Time currentTime;
+            peripherals_clockGetTime(&currentTime);
+            state.setTimeState.time.hours = currentTime.hours;
+            state.setTimeState.time.minutes = currentTime.minutes;
+            state.setTimeState.time.seconds = currentTime.seconds;
+            peripherals_clockSetRunning(false);
+            uiView_showTopLeftButton(">");
             uiView_showTopRightButton("+");
-            uiView_showBottomRightButton("-");
+            uiView_showBottomLeftButton("x");
+            uiView_showBottomRightButton("OK");
             uiView_showMessage("Set time");
             uiModel_incrementClockHighlight();
             uiView_requestUpdate();
@@ -248,8 +257,66 @@ public void uiModel_decrementDateHighlight() {
     uiView_requestUpdate();
 }
 
+public void uiModel_incrementSetTime() {
+    switch (state.setTimeState.field) {
+        case HOURS:
+            if (state.setTimeState.time.hours < 23) state.setTimeState.time.hours++;
+            else state.setTimeState.time.hours = 0;
+            break;
+        case MINUTES:
+            if (state.setTimeState.time.minutes < 59) state.setTimeState.time.minutes++;
+            else state.setTimeState.time.minutes = 0;
+            break;
+        case SECONDS:
+            if (state.setTimeState.time.seconds < 59) state.setTimeState.time.seconds++;
+            else state.setTimeState.time.seconds = 0;
+            break;
+    }
+    formatTime(&state.setTimeState.time, state.buffers.timeText);
+    uiView_showClock(state.buffers.timeText);
+    uiView_requestUpdate();
+}
+
+public void uiModel_decrementSetTime() {
+    switch (state.setTimeState.field) {
+        case HOURS:
+            if (state.setTimeState.time.hours > 0) state.setTimeState.time.hours--;
+            else state.setTimeState.time.hours = 23;
+            break;
+        case MINUTES:
+            if (state.setTimeState.time.minutes > 0) state.setTimeState.time.minutes--;
+            else state.setTimeState.time.minutes = 59;
+            break;
+        case SECONDS:
+            if (state.setTimeState.time.seconds > 0) state.setTimeState.time.seconds--;
+            else state.setTimeState.time.seconds = 59;
+            break;
+    }
+    formatTime(&state.setTimeState.time, state.buffers.timeText);
+    uiView_showClock(state.buffers.timeText);
+    uiView_requestUpdate();
+}
+
+public void uiModel_acceptSetTime() {
+    peripherals_clockSetTime(&state.setTimeState.time);
+    peripherals_clockSetRunning(true);
+    formatTime(&state.setTimeState.time, state.buffers.timeText);
+    uiView_showClock(state.buffers.timeText);
+    uiView_forceUpdate();
+    uiModel_setActivity(HIDDEN);
+}
+
+public void uiModel_cancelSetTime() {
+    // TODO: 20-May-2022 @basshelal: Breaks because infinite loop
+    peripherals_clockSetRunning(true);
+    uiView_forceUpdate();
+    uiModel_setActivity(HIDDEN);
+}
+
 public void uiModel_loop() {
     uiView_loop();
+    // TODO: 20-May-2022 @basshelal: The check for inactivity should probably be in controller because it's a user
+    //  action
     if (state.countingMillisSinceLastPress) {
         state.millisSinceLastPress += MILLIS_PER_CYCLE_MAIN_CORE;
     }

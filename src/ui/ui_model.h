@@ -30,6 +30,14 @@ extern void uiModel_incrementDateHighlight();
 
 extern void uiModel_decrementDateHighlight();
 
+extern void uiModel_incrementSetTime();
+
+extern void uiModel_decrementSetTime();
+
+extern void uiModel_acceptSetTime();
+
+extern void uiModel_cancelSetTime();
+
 extern void uiModel_loop();
 
 #endif //PICO_CLOCK_UI_MODEL_H
