@@ -50,14 +50,6 @@ private void timeChanged(const struct Time *const oldTime,
     log("%s\n", state.buffers.timeText);
     uiView_showClock(state.buffers.timeText);
 
-    // TODO: 19-May-2022 @basshelal: Use a callback based approach to battery updates similar to clock
-    sprintf(state.buffers.batteryText, "%02.f%% %01.02fV",
-            peripherals_batteryGetPercentage(),
-            peripherals_batteryGetVoltage());
-    log("%s\n", state.buffers.batteryText);
-
-    uiView_showBatteryPercentage(state.buffers.batteryText);
-
     uiView_requestUpdate();
 }
 
@@ -115,12 +107,25 @@ private bool fixDate(Date *date) {
     return false;
 }
 
+private void batteryPercentageChanged(const float oldPercentage, const float newPercentage) {
+    sprintf(state.buffers.batteryText, "%02.f%%", newPercentage);
+    log("%s\n", state.buffers.batteryText);
+    uiView_showBatteryPercentage(state.buffers.batteryText);
+
+    uiView_requestUpdate();
+}
+
 public void uiModel_init() {
     uiView_init();
     state.dateTime = calloc(sizeof(DateTime), 1);
     state.timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
     peripherals_clockSetTimeChangedCallback(timeChanged);
     peripherals_clockSetDateChangedCallback(dateChanged);
+    peripherals_batterySetPercentageChangedCallback(batteryPercentageChanged);
+
+    // Force battery query and display on initialization
+    batteryPercentageChanged(-1, peripherals_batteryGetPercentage());
+    uiView_forceUpdate();
 }
 
 public void uiModel_buttonPressed() {

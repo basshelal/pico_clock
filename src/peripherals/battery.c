@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/i2c.h"
+#include "../ui/ui_view.h"
 
 /** default I2C address **/
 #define INA219_ADDRESS (0x43)
@@ -99,8 +100,6 @@ enum {
     INA219_CONFIG_MODE_SANDBVOLT_CONTINUOUS
 };
 
-private float current_percentage;
-private bool current_is_charging;
 private uint8_t ina219_i2caddr;
 private uint32_t ina219_calValue;
 
@@ -108,6 +107,11 @@ private uint32_t ina219_calValue;
 // values to mA and mW, taking into account the current config settings
 private uint32_t ina219_currentDivider_mA;
 private float ina219_powerMultiplier_mW;
+
+private float oldPercentage;
+private bool oldIsCharging;
+private BatteryStateChangedCallback stateChangedCallback;
+private BatteryPercentageChangedCallback percentageChangedCallback;
 
 /*!
  *  @brief  Sends a single command byte over I2C
@@ -257,6 +261,10 @@ private bool isFullyCharged() {
     return battery_getShuntVoltageMilliVolts() == 0.0F;
 }
 
+private float calculatePercentage() {
+    return ((battery_getBusVoltageVolts() - 3.0F) / 1.2F) * 100.0F;
+}
+
 /*!
  *  @brief  Setups the HW (defaults to 32V and 2A for calibration values)
  *  @param theWire the TwoWire object to use
@@ -272,6 +280,16 @@ public void battery_init() {
     gpio_pull_up(BATTERY_SDA_PIN);
     setCalibration32V2A();
     powerSave(true);
+    oldPercentage = calculatePercentage();
+    oldIsCharging = isCharging();
+}
+
+extern void battery_setBatteryStateChangedCallback(const BatteryStateChangedCallback callback) {
+    stateChangedCallback = callback;
+}
+
+extern void battery_setBatteryPercentageChangedCallback(const BatteryPercentageChangedCallback callback) {
+    percentageChangedCallback = callback;
 }
 
 /*!
@@ -340,30 +358,46 @@ public float battery_getPowerMilliWatts() {
     return valueDec;
 }
 
-// TODO: 19-May-2022 @basshelal: Not working when restarted in battery mode
 public float battery_getPercentage() {
     if (isFullyCharged()) {
-        current_is_charging = true;
-        current_percentage = 100.0F;
-        return current_percentage;
+        oldIsCharging = true;
+        oldPercentage = 100.0F;
+        return oldPercentage;
     }
-    const float voltage = battery_getBusVoltageVolts();
-    const float percentage = ((voltage - 3.0F) / 1.2F) * 100.0F;
 
-    float result = percentage > 100 ? 100 : // clamp to between 100 and 0
-                   percentage < 0 ? 0 : percentage;
+    const float percentage = calculatePercentage();
+    float currentPercentage = percentage > 100 ? 100 : // clamp to between 100 and 0
+                              (percentage < 0 ? 0 : percentage);
 
-    const bool currentlyCharging = isCharging();
-    if (current_is_charging != currentlyCharging) { // state has changed since last check
-        current_is_charging = currentlyCharging;
-    } else {
-        if (current_is_charging && result < current_percentage) result = current_percentage;
-        if (!current_is_charging && result > current_percentage) result = current_percentage;
+    if (oldPercentage == 0) { // initialize oldPercentage
+        oldPercentage = currentPercentage;
     }
-    current_percentage = result;
-    return result;
+
+    const bool currentIsCharging = isCharging();
+    if (oldIsCharging != currentIsCharging) { // state has changed since last check
+        if (stateChangedCallback) stateChangedCallback(oldIsCharging, currentIsCharging);
+        oldIsCharging = currentIsCharging;
+    } else { // state is same between checks
+        if (currentIsCharging && currentPercentage < oldPercentage)
+            // charging but somehow new percentage is lower because of inaccuracy
+            currentPercentage = oldPercentage;
+        else if (!currentIsCharging && currentPercentage > oldPercentage)
+            // discharging but somehow new percentage is higher because of inaccuracy
+            currentPercentage = oldPercentage;
+    }
+    if (oldPercentage != currentPercentage) {
+        if (percentageChangedCallback) percentageChangedCallback(oldPercentage, currentPercentage);
+    }
+    oldPercentage = currentPercentage;
+    return currentPercentage;
 }
 
 public void battery_loop() {
-
+    static int cyclesRan = 0;
+    static const int cyclesToSkip = 8;
+    // Avoid querying the battery too often (ironically, as to not waste battery)
+    if (cyclesRan >= (cyclesToSkip - 1)) {
+        battery_getPercentage();
+        cyclesRan = 0;
+    } else cyclesRan++;
 }

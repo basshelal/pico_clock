@@ -1,11 +1,17 @@
 #ifndef PICO_CLOCK_BATTERY_H
 #define PICO_CLOCK_BATTERY_H
 
+#include "../types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern void battery_init();
+
+extern void battery_setBatteryStateChangedCallback(const BatteryStateChangedCallback callback);
+
+extern void battery_setBatteryPercentageChangedCallback(const BatteryPercentageChangedCallback callback);
 
 extern float battery_getShuntVoltageMilliVolts();
 

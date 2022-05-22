@@ -53,4 +53,8 @@ typedef void (*TimeChangedCallback)(
 typedef void (*DateTimeChangedCallback)(
         const struct DateTime *const oldDateTime, const struct DateTime *const newDateTime);
 
+typedef void (*BatteryStateChangedCallback)(const bool oldIsCharging, const bool newIsCharging);
+
+typedef void (*BatteryPercentageChangedCallback)(const float oldPercentage, const float newPercentage);
+
 #endif //PICO_CLOCK_TYPES_H

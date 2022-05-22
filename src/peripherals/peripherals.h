@@ -33,6 +33,10 @@ extern float peripherals_batteryGetPercentage();
 
 extern float peripherals_batteryGetVoltage();
 
+extern void peripherals_batterySetPercentageChangedCallback(const BatteryPercentageChangedCallback callback);
+
+extern void peripherals_batterySetStateChangedCallback(const BatteryStateChangedCallback callback);
+
 extern void peripherals_loop();
 
 #endif //PICO_CLOCK_PERIPHERALS_H

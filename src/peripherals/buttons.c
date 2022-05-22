@@ -32,13 +32,16 @@ private void handleCallback(const uint gpio, const uint32_t event) {
     }
 }
 
+// TODO: 22-May-2022 @basshelal: The hold calculations are tied to the main core which
+//  means when held, it will count as many holds in a single UI core cycle, this is
+//  sometimes undesirable because it means a hold may skip a UI response
 private inline void handleHeld(ButtonState *const state) {
     if (!state) return;
     if (state->isOn) {
-        state->millisHeld += MILLIS_PER_CYCLE_MAIN_CORE;
         if (state->millisHeld > 0 && state->heldCallback) {
             (state->heldCallback)(state);
         }
+        state->millisHeld += MILLIS_PER_CYCLE_MAIN_CORE;
     } else {
         state->millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
     }
@@ -66,11 +69,10 @@ public void buttons_init() {
     gpio_set_irq_enabled_with_callback(X_BUTTON_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, handleCallback);
     gpio_set_irq_enabled_with_callback(Y_BUTTON_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, handleCallback);
 
-    // Skip 1 cycle before a hold is triggered, otherwise a single press will count as a short hold
-    buttonStateA.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
-    buttonStateB.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
-    buttonStateX.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
-    buttonStateY.millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
+    buttonStateA.millisHeld = 0;
+    buttonStateB.millisHeld = 0;
+    buttonStateX.millisHeld = 0;
+    buttonStateY.millisHeld = 0;
 }
 
 public void buttons_loop() {

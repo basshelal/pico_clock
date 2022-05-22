@@ -69,6 +69,14 @@ public float peripherals_batteryGetVoltage() {
     return battery_getBusVoltageVolts();
 }
 
+public void peripherals_batterySetPercentageChangedCallback(const BatteryPercentageChangedCallback callback) {
+    battery_setBatteryPercentageChangedCallback(callback);
+}
+
+public void peripherals_batterySetStateChangedCallback(const BatteryStateChangedCallback callback) {
+    battery_setBatteryStateChangedCallback(callback);
+}
+
 public void peripherals_loop() {
     display_loop();
     buttons_loop();

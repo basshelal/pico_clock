@@ -4,6 +4,8 @@
 #include "ui_view.h"
 #include "ui_model.h"
 
+#define HOLD_THRESHOLD MILLIS_PER_CYCLE_MAIN_CORE * 3
+
 private void uiController_pressedA() {
     uiModel_buttonPressed();
     switch (uiModel_getActivity()) {
@@ -98,7 +100,7 @@ private void uiController_changedCallbackA(const ButtonState *const buttonState)
 }
 
 private void uiController_heldCallbackA(const ButtonState *const buttonState) {
-    if (buttonState->millisHeld >= 500) uiController_pressedA();
+    if (buttonState->millisHeld >= HOLD_THRESHOLD) uiController_pressedA();
 }
 
 private void uiController_changedCallbackB(const ButtonState *const buttonState) {
@@ -106,7 +108,7 @@ private void uiController_changedCallbackB(const ButtonState *const buttonState)
 }
 
 private void uiController_heldCallbackB(const ButtonState *const buttonState) {
-    if (buttonState->millisHeld >= 500) uiController_pressedB();
+    if (buttonState->millisHeld >= HOLD_THRESHOLD) uiController_pressedB();
 }
 
 private void uiController_changedCallbackX(const ButtonState *const buttonState) {
@@ -114,7 +116,7 @@ private void uiController_changedCallbackX(const ButtonState *const buttonState)
 }
 
 private void uiController_heldCallbackX(const ButtonState *const buttonState) {
-    if (buttonState->millisHeld >= 500) uiController_pressedX();
+    if (buttonState->millisHeld >= HOLD_THRESHOLD) uiController_pressedX();
 }
 
 private void uiController_changedCallbackY(const ButtonState *const buttonState) {
@@ -122,7 +124,7 @@ private void uiController_changedCallbackY(const ButtonState *const buttonState)
 }
 
 private void uiController_heldCallbackY(const ButtonState *const buttonState) {
-    if (buttonState->millisHeld >= 500) uiController_pressedY();
+    if (buttonState->millisHeld >= HOLD_THRESHOLD) uiController_pressedY();
 }
 
 public void uiController_init() {
