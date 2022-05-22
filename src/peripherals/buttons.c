@@ -32,9 +32,6 @@ private void handleCallback(const uint gpio, const uint32_t event) {
     }
 }
 
-// TODO: 22-May-2022 @basshelal: The hold calculations are tied to the main core which
-//  means when held, it will count as many holds in a single UI core cycle, this is
-//  sometimes undesirable because it means a hold may skip a UI response
 private inline void handleHeld(ButtonState *const state) {
     if (!state) return;
     if (state->isOn) {
@@ -43,7 +40,7 @@ private inline void handleHeld(ButtonState *const state) {
         }
         state->millisHeld += MILLIS_PER_CYCLE_MAIN_CORE;
     } else {
-        state->millisHeld = -MILLIS_PER_CYCLE_MAIN_CORE;
+        state->millisHeld = 0;
     }
 }
 

@@ -9,8 +9,6 @@
 #define ON_LIGHT_PIN PICO_DEFAULT_LED_PIN
 
 // Battery
-// TODO: 24-Feb-2022 @basshelal: Battery shares pins with Screen LED R and G, snip the battery's pins there to avoid
-//  having the LED flash every time we query the battery
 #define BATTERY_SCLK_PIN 7
 #define BATTERY_SDA_PIN 6
 #define BATTERY_I2C i2c1

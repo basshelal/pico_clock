@@ -6,8 +6,6 @@
 
 #include "../peripherals/display.h"
 
-// TODO: 20-May-2022 @basshelal: Remove hardcoded numbers from this file!
-
 private const uint8_t outsideMargin = 10;
 private const uint8_t charWidth = 6;
 private const uint8_t charHeight = 8;
@@ -120,7 +118,7 @@ private inline void uiView_loopUICore() {
     }
     if (updateRequestCount > 0) {
         uiView_forceUpdate();
-        printf("Update requests: %i\n", updateRequestCount);
+        log("Update requests: %i\n", updateRequestCount);
     }
 }
 
